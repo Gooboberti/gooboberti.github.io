@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gooboberti | Hub — Streams, Music, Art & Modular Life Sim</title>
+    <meta name="description" content="Gooboberti's personal launchpad: immersive livestreams, AI-crafted music & art, and the Modular Life Sim evolutionary artificial life project exploring multi-scale intelligence and Thronglet emergence.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; letter-spacing: -0.025em; }
+
+        .section-header { font-size: 2.25rem; line-height: 2.5rem; font-weight: 700; letter-spacing: -0.04em; }
+
+        .glass { background: rgba(255,255,255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255, 0.1); }
+
+        .project-card { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        .project-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+
+        .social-card { transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        .social-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+
+        .nav-link { transition: color 0.1s ease; }
+        .nav-link:hover { color: #14b8a6; }
+
+        .hero-bg { background: radial-gradient(at center, #0f172a 0%, #020617 70%); }
+
+        .accent-btn { background: #14b8a6; color: #020617; font-weight: 600; transition: all 0.2s ease; }
+        .accent-btn:hover { background: #5eead4; transform: translateY(-1px); }
+
+        .x-timeline { border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+
+        .brand-img { transition: transform 0.3s ease; }
+        .brand-img:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <!-- NAV -->
+    <nav class="sticky top-0 z-50 bg-zinc-950/90 backdrop-blur-lg border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <img src="images/gooboberti-avatar.jpg" alt="Gooboberti" class="w-10 h-10 rounded-2xl object-cover border border-white/20" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center hidden" id="fallback-logo">
+                    <span class="text-zinc-950 font-bold text-xl tracking-tighter">G</span>
+                </div>
+                <div>
+                    <span class="font-display text-2xl font-semibold tracking-tighter">GOOBOBERTI</span>
+                </div>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-x-8 text-sm font-medium">
+                <a href="#about" class="nav-link text-zinc-400 hover:text-white">About</a>
+                <a href="#socials" class="nav-link text-zinc-400 hover:text-white">Socials</a>
+                <a href="#x" class="nav-link text-zinc-400 hover:text-white">On X</a>
+                <a href="#streams" class="nav-link text-zinc-400 hover:text-white">Streams</a>
+                <a href="#projects" class="nav-link text-zinc-400 hover:text-white">Projects</a>
+            </div>
+
+            <div class="flex items-center gap-x-3">
+                <a href="https://gooboberti.github.io/ModularLifeSim-Website/" class="hidden sm:inline-flex items-center gap-x-2 px-4 py-2 rounded-2xl text-sm font-semibold border border-white/20 hover:bg-white/5 transition-colors">
+                    <span>Modular Life Sim</span>
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </a>
+                <a href="#socials" class="inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-white/20 hover:bg-white/5 transition-colors">
+                    <i class="fas fa-share-alt"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header id="hero" class="hero-bg pt-16 pb-20 border-b border-white/10">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <div class="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-3xl bg-white/5 border border-white/10 mb-6">
+                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span class="text-xs font-mono tracking-[2px] text-emerald-400 font-medium">LIVE FROM THE EDGE</span>
+            </div>
+
+            <h1 class="font-display text-7xl md:text-8xl font-semibold tracking-tighter mb-4">GOOBOBERTI</h1>
+            
+            <p class="max-w-md mx-auto text-2xl md:text-3xl text-zinc-400 tracking-tight mb-8">
+                Streamer • AI Creator •<br class="hidden md:block"> Evolutionary Architect
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                <a href="#projects" class="accent-btn inline-flex items-center justify-center gap-x-3 px-8 py-4 rounded-3xl text-lg shadow-lg shadow-teal-950/50">
+                    <span>Explore Modular Life Sim</span>
+                    <i class="fas fa-rocket"></i>
+                </a>
+                
+                <a href="https://www.youtube.com/@Gooboberti" target="_blank" class="inline-flex items-center justify-center gap-x-3 px-8 py-4 rounded-3xl text-lg border border-white/20 hover:bg-white/5 transition-all">
+                    <i class="fab fa-youtube text-red-500"></i>
+                    <span>Watch Streams</span>
+                </a>
+            </div>
+
+            <div class="flex items-center justify-center gap-x-4">
+                <a href="https://x.com/Gooboberti" target="_blank" class="group flex items-center gap-x-2 px-5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                    <i class="fab fa-x-twitter text-xl group-hover:scale-110 transition-transform"></i>
+                    <span class="font-medium">@Gooboberti</span>
+                </a>
+                <a href="https://www.youtube.com/@Gooboberti" target="_blank" class="group flex items-center gap-x-2 px-5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                    <i class="fab fa-youtube text-xl text-red-500 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-medium">YouTube</span>
+                </a>
+                <a href="https://www.facebook.com/gooboberti/" target="_blank" class="group flex items-center gap-x-2 px-5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                    <i class="fab fa-facebook-f text-xl text-blue-500 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-medium">Facebook</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ABOUT -->
+    <section id="about" class="max-w-4xl mx-auto px-6 py-20">
+        <div class="text-center mb-12">
+            <div class="inline-block px-4 py-1 rounded-full bg-white/5 text-xs tracking-[3px] font-mono text-teal-400 mb-3">THE CREATOR</div>
+            <h2 class="section-header">Building at the intersection<br>of play, creation & emergence.</h2>
+        </div>
+
+        <div class="prose prose-invert max-w-none text-lg text-zinc-300 leading-relaxed">
+            <p>I'm Gooboberti — a full-time livestreamer and multi-disciplinary creator. I spend 12+ hours a day deep in immersive survival and crafting worlds (No Man's Sky, Crimson Desert and beyond), composing original music and anthems with AI tools like Suno, crafting cinematic visuals and viral shorts with Grok Imagine, and developing <span class="font-semibold text-teal-400">Modular Life Sim</span> — an ambitious open-ended evolutionary simulation exploring persistent identity, collective behavior, and the conditions for higher-order agency.</p>
+            
+            <p class="mt-6">This is more than content. It's an ongoing experiment in consciousness, systems, and what happens when complexity is allowed to stack across multiple layers — from individual creatures with evolvable modules and neural architectures, to MacroOrganisms with internal ecosystems, to the potential emergence of true collective intelligence.</p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div class="glass p-5 rounded-3xl">
+                <div class="text-3xl font-semibold text-teal-400">12+</div>
+                <div class="text-sm text-zinc-400 mt-1">Hours streamed daily</div>
+            </div>
+            <div class="glass p-5 rounded-3xl">
+                <div class="text-3xl font-semibold text-teal-400">∞</div>
+                <div class="text-sm text-zinc-400 mt-1">Worlds being built</div>
+            </div>
+            <div class="glass p-5 rounded-3xl">
+                <div class="text-3xl font-semibold text-teal-400">Multi</div>
+                <div class="text-sm text-zinc-400 mt-1">Scale evolution</div>
+            </div>
+            <div class="glass p-5 rounded-3xl">
+                <div class="text-3xl font-semibold text-teal-400">You</div>
+                <div class="text-sm text-zinc-400 mt-1">Along for the ride</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SOCIALS -->
+    <section id="socials" class="bg-zinc-900/50 border-y border-white/10 py-16">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-10">
+                <div>
+                    <div class="text-xs tracking-[3px] font-mono text-teal-400 mb-2">CONNECT</div>
+                    <h2 class="section-header">Find me everywhere</h2>
+                </div>
+                <p class="text-zinc-400 max-w-xs mt-3 md:mt-0">Real-time thoughts, deep dives, live chaos, and creative experiments.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- X Card - BIG -->
+                <a href="https://x.com/Gooboberti" target="_blank" class="social-card group col-span-1 md:col-span-1 bg-zinc-900 border border-white/10 hover:border-teal-500/50 rounded-3xl p-8 flex flex-col">
+                    <div class="flex items-start justify-between mb-6">
+                        <div>
+                            <i class="fab fa-x-twitter text-5xl text-white group-hover:text-teal-400 transition-colors"></i>
+                        </div>
+                        <div class="px-4 py-1.5 rounded-2xl bg-white/5 text-xs font-mono tracking-widest self-start">PRIMARY</div>
+                    </div>
+                    <div class="mt-auto">
+                        <div class="text-4xl font-semibold tracking-tighter mb-1">X / Twitter</div>
+                        <div class="text-2xl text-teal-400 font-medium">@Gooboberti</div>
+                        <div class="text-sm text-zinc-400 mt-3 group-hover:text-zinc-300 transition-colors">Real-time updates, philosophy, stream announcements & behind-the-scenes.</div>
+                        <div class="mt-6 inline-flex items-center text-sm font-semibold text-teal-400 group-hover:gap-x-2 transition-all">
+                            FOLLOW ON X <i class="fas fa-arrow-right ml-2 group-hover:ml-3 transition-all"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- YouTube -->
+                <a href="https://www.youtube.com/@Gooboberti" target="_blank" class="social-card group bg-zinc-900 border border-white/10 hover:border-red-500/50 rounded-3xl p-8 flex flex-col">
+                    <div class="flex items-start justify-between mb-6">
+                        <i class="fab fa-youtube text-5xl text-red-500"></i>
+                    </div>
+                    <div class="mt-auto">
+                        <div class="text-3xl font-semibold tracking-tighter mb-1">YouTube</div>
+                        <div class="text-xl text-red-400 font-medium">@Gooboberti</div>
+                        <div class="text-sm text-zinc-400 mt-3">12+ hour daily livestreams • VODs • Game mechanics deep dives • Creative experiments</div>
+                        <div class="mt-6 inline-flex items-center text-sm font-semibold text-red-400 group-hover:gap-x-2 transition-all">
+                            SUBSCRIBE & WATCH <i class="fas fa-arrow-right ml-2 group-hover:ml-3 transition-all"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Facebook -->
+                <a href="https://www.facebook.com/gooboberti/" target="_blank" class="social-card group bg-zinc-900 border border-white/10 hover:border-blue-500/50 rounded-3xl p-8 flex flex-col">
+                    <div class="flex items-start justify-between mb-6">
+                        <i class="fab fa-facebook-f text-5xl text-blue-500"></i>
+                    </div>
+                    <div class="mt-auto">
+                        <div class="text-3xl font-semibold tracking-tighter mb-1">Facebook</div>
+                        <div class="text-xl text-blue-400 font-medium">gooboberti</div>
+                        <div class="text-sm text-zinc-400 mt-3">Full streams, community discussions, and extended gameplay sessions.</div>
+                        <div class="mt-6 inline-flex items-center text-sm font-semibold text-blue-400 group-hover:gap-x-2 transition-all">
+                            JOIN ON FB <i class="fas fa-arrow-right ml-2 group-hover:ml-3 transition-all"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- X FEED -->
+    <section id="x" class="max-w-5xl mx-auto px-6 py-20">
+        <div class="flex items-end justify-between mb-8">
+            <div>
+                <div class="text-xs tracking-[3px] font-mono text-teal-400 mb-1">LIVE THOUGHTS</div>
+                <h2 class="section-header">Latest from X</h2>
+            </div>
+            <a href="https://x.com/Gooboberti" target="_blank" class="hidden md:inline-flex items-center gap-x-2 text-sm font-medium text-teal-400 hover:text-teal-300">
+                VIEW PROFILE <i class="fas fa-external-link-alt text-xs ml-1"></i>
+            </a>
+        </div>
+
+        <div class="x-timeline">
+            <a class="twitter-timeline" data-height="520" data-theme="dark" href="https://x.com/Gooboberti" data-chrome="noheader nofooter transparent noborders">Tweets by @Gooboberti</a>
+            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        </div>
+        <p class="text-center text-xs text-zinc-500 mt-4">Recent posts load dynamically from X. Follow for the full stream of consciousness.</p>
+    </section>
+
+    <!-- STREAMS -->
+    <section id="streams" class="bg-zinc-900/60 border-y border-white/10 py-16">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="grid md:grid-cols-5 gap-8 items-center">
+                <div class="md:col-span-3">
+                    <div class="text-xs tracking-[3px] font-mono text-teal-400 mb-3">WATCH LIVE</div>
+                    <h2 class="section-header tracking-tighter mb-4">12+ hours of deep dives,<br>every single day.</h2>
+                    <p class="text-xl text-zinc-300 max-w-lg">I livestream immersive gameplay, base building, trading empires, exploration, and philosophical rambles across multiple platforms. No Man's Sky, Crimson Desert, and whatever world I'm currently obsessed with.</p>
+                    
+                    <div class="mt-8 flex flex-wrap gap-4">
+                        <a href="https://www.youtube.com/@Gooboberti" target="_blank" class="accent-btn inline-flex items-center gap-x-3 px-7 py-3.5 rounded-3xl text-base">
+                            <i class="fab fa-youtube"></i>
+                            <span>Go to YouTube Channel</span>
+                        </a>
+                        <a href="https://www.facebook.com/gooboberti/" target="_blank" class="inline-flex items-center gap-x-3 px-7 py-3.5 rounded-3xl text-base border border-white/20 hover:bg-white/5 transition-colors">
+                            <i class="fab fa-facebook-f"></i>
+                            <span>Facebook Streams</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 mt-8 md:mt-0">
+                    <div class="glass rounded-3xl p-8 border border-white/10">
+                        <div class="uppercase text-xs tracking-widest text-teal-400 mb-3 font-mono">MOST RECENT ACTIVITY</div>
+                        <div class="font-semibold text-2xl leading-tight mb-4">Catch the latest VODs, full playthroughs, and live sessions on YouTube.</div>
+                        <div class="text-sm text-zinc-400">I optimize for long-form deep content — perfect for background listening or focused watching while I manage massive production chains and explore new frontiers.</div>
+                        
+                        <div class="mt-6 pt-6 border-t border-white/10 text-xs text-zinc-500 flex items-center gap-x-2">
+                            <i class="fas fa-video"></i> 
+                            <span>Daily uploads • Long-form archives</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section id="projects" class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-12">
+            <div class="inline-block px-4 py-1 rounded-full bg-white/5 text-xs tracking-[3px] font-mono text-teal-400 mb-3">THE WORK</div>
+            <h2 class="section-header">Featured Project</h2>
+            <p class="text-zinc-400 mt-3 max-w-md mx-auto">The heart of my current creative output — an evolving simulation of life, mind, and collective emergence.</p>
+        </div>
+
+        <div class="project-card max-w-4xl mx-auto bg-zinc-900 border border-white/10 rounded-3xl overflow-hidden mb-12">
+            <img src="images/modular-life-sim-hero.jpg" alt="Modular Life Sim visual - glowing modular creatures and emergent structures" class="w-full h-72 md:h-80 object-cover brand-img" onerror="this.style.display='none'">
+            
+            <div class="p-10 md:p-14">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-y-6">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-x-3 mb-4">
+                            <div class="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-mono tracking-widest rounded-2xl">ACTIVE DEVELOPMENT</div>
+                            <div class="text-xs text-zinc-500">v780 • Annotated Foundation</div>
+                        </div>
+                        
+                        <h3 class="font-display text-5xl tracking-tighter mb-4">Modular Life Sim</h3>
+                        
+                        <p class="text-xl text-zinc-300 max-w-prose">An open-ended evolutionary simulation exploring persistent identity, collective behavior, and the conditions for higher-order agency. Creatures with evolvable modules and neural networks form MacroOrganisms with internal ecosystems, sonic communication, and emergent specialization — on the path toward Thronglet-level emergence.</p>
+
+                        <div class="mt-8 flex flex-wrap gap-3">
+                            <a href="https://gooboberti.github.io/ModularLifeSim-Website/" class="accent-btn inline-flex items-center justify-center gap-x-3 px-8 py-3.5 rounded-3xl text-base shadow-lg">
+                                <span>Enter the Full Simulation Site</span>
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            
+                            <a href="https://gooboberti.github.io/ModularLifeSim-Website/" class="inline-flex items-center justify-center gap-x-2 px-6 py-3.5 rounded-3xl border border-white/20 hover:bg-white/5 text-sm font-medium transition-colors">
+                                <span>Learn the Vision & Roadmap</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-6 px-1">
+                <h3 class="font-semibold text-2xl tracking-tight">Interactive Experiments</h3>
+                <span class="text-xs px-3 py-1 bg-white/5 rounded-2xl text-zinc-400">Part of Modular Life Sim</span>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <a href="https://gooboberti.github.io/ModularLifeSim-Website/echoes.html" target="_blank" class="project-card group block bg-zinc-900 border border-white/10 hover:border-teal-500/40 rounded-3xl p-7">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <i class="fas fa-waveform-lines text-3xl text-teal-400 mb-4"></i>
+                            <h4 class="font-semibold text-2xl tracking-tight mb-2 group-hover:text-teal-400 transition-colors">Echoes</h4>
+                            <p class="text-sm text-zinc-400">A creature whose memory and emotional state visibly influence its behavior and decisions. Fear, curiosity, contentment in action.</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-xs font-medium text-teal-400 flex items-center gap-x-1.5">
+                        PLAY EXPERIMENT <i class="fas fa-play ml-1 text-[10px]"></i>
+                    </div>
+                </a>
+
+                <a href="https://gooboberti.github.io/ModularLifeSim-Website/neural_forager.html" target="_blank" class="project-card group block bg-zinc-900 border border-white/10 hover:border-teal-500/40 rounded-3xl p-7">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <i class="fas fa-brain text-3xl text-teal-400 mb-4"></i>
+                            <h4 class="font-semibold text-2xl tracking-tight mb-2 group-hover:text-teal-400 transition-colors">Neural Forager</h4>
+                            <p class="text-sm text-zinc-400">Watch a creature’s neural network make real-time decisions as it hunts. Inputs, hidden layers, and outputs in action.</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-xs font-medium text-teal-400 flex items-center gap-x-1.5">
+                        PLAY EXPERIMENT <i class="fas fa-play ml-1 text-[10px]"></i>
+                    </div>
+                </a>
+
+                <a href="https://gooboberti.github.io/ModularLifeSim-Website/sandbox.html" target="_blank" class="project-card group block bg-zinc-900 border border-white/10 hover:border-teal-500/40 rounded-3xl p-7">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <i class="fas fa-flask text-3xl text-teal-400 mb-4"></i>
+                            <h4 class="font-semibold text-2xl tracking-tight mb-2 group-hover:text-teal-400 transition-colors">Life Lab / Sandbox</h4>
+                            <p class="text-sm text-zinc-400">Evolutionary swarm simulation. Watch creatures evolve, form macros, and develop emergent group behavior over generations.</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-xs font-medium text-teal-400 flex items-center gap-x-1.5">
+                        PLAY EXPERIMENT <i class="fas fa-play ml-1 text-[10px]"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <p class="text-sm text-zinc-400">More experiments, music, art, and worlds are in active development. The best way to follow everything is through the social channels above.</p>
+        </div>
+    </section>
+
+    <div class="border-t border-white/10 bg-zinc-900/50 py-16">
+        <div class="max-w-3xl mx-auto px-6 text-center">
+            <h2 class="font-display text-4xl tracking-tighter mb-4">Ready to dive deeper?</h2>
+            <p class="text-xl text-zinc-300 mb-8">Whether you're here for the streams, the simulation, the music, or the philosophy — there's always more happening.</p>
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="https://gooboberti.github.io/ModularLifeSim-Website/" class="accent-btn inline-flex items-center justify-center gap-x-3 px-10 py-4 rounded-3xl text-lg">
+                    <span>Launch Modular Life Sim</span>
+                </a>
+                <a href="https://x.com/Gooboberti" target="_blank" class="inline-flex items-center justify-center gap-x-3 px-10 py-4 rounded-3xl border border-white/20 text-lg font-medium hover:bg-white/5 transition-colors">
+                    <i class="fab fa-x-twitter"></i>
+                    <span>Follow on X</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-white/10 py-10">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row md:items-center justify-between gap-y-4 text-sm text-zinc-400">
+            <div>© Gooboberti. All rights reserved. Built with curiosity. Custom graphics with Grok Imagine.</div>
+            <div class="flex items-center gap-x-6">
+                <a href="https://github.com/Gooboberti/gooboberti.github.io" target="_blank" class="hover:text-white transition-colors">This site on GitHub</a>
+                <a href="https://gooboberti.github.io/ModularLifeSim-Website/" target="_blank" class="hover:text-white transition-colors">Modular Life Sim</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function initTailwind() {}
+        
+        window.onload = function() {
+            initTailwind();
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        e.preventDefault();
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+        console.log('%c[Gooboberti Hub] Root launch page ready. Pointing to Modular Life Sim.', 'color:#14b8a6');
+    </script>
+</body>
+</html>
