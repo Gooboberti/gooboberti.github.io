@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Hemi-Sync Neural Interface • v24</title>
+    <style>
+        :root {
+            --bg-color: #050507;
+            --panel-bg: rgba(15, 15, 22, 0.94);
+            --border-color: #3a3a45;
+            --accent-cyan: #00e5ff;
+            --accent-magenta: #ff3366;
+            --accent-green: #00ff88;
+            --text-main: #f0f0f5;
+            --text-muted: #a0a0b0;
+            --button-bg: rgba(30, 30, 40, 0.95);
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
+            background-color: var(--bg-color); color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 17px;
+            line-height: 1.5;
+        }
+
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+        #ui-layer { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; 
+            pointer-events: none; display: flex; padding: 20px; box-sizing: border-box; 
+            align-items: flex-start; justify-content: space-between; gap: 20px;
+        }
+
+        .control-panel {
+            pointer-events: auto; 
+            width: 420px; 
+            max-width: 95vw;
+            background: var(--panel-bg); 
+            border: 1px solid var(--border-color);
+            border-radius: 16px; 
+            padding: 26px 24px; 
+            backdrop-filter: blur(16px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(255,255,255,0.05);
+            display: flex; 
+            flex-direction: column; 
+            gap: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .control-panel { 
+                width: 100%; 
+                max-width: 100%;
+                padding: 20px 16px;
+                border-radius: 14px;
+                gap: 16px;
+            }
+            .header h1 { font-size: 1.3rem !important; }
+            .preset-btn { padding: 13px 6px 11px !important; min-height: 54px !important; }
+            .stats-panel { padding: 13px 14px; }
+            .modal-content { padding: 24px 20px; }
+        }
+
+        .header { 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding-bottom: 13px; 
+            margin-bottom: 2px; 
+        }
+        .header h1 { 
+            font-size: 1.4rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2.8px; 
+            margin: 0; 
+            color: var(--accent-cyan); 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        .header h1::before { 
+            content: ''; 
+            display: inline-block; 
+            width: 10px; 
+            height: 10px; 
+            background: var(--accent-cyan); 
+            border-radius: 50%; 
+            box-shadow: 0 0 14px var(--accent-cyan); 
+        }
+        .header p { 
+            font-size: 0.88rem; 
+            color: var(--text-muted); 
+            margin: 8px 0 0 0; 
+            line-height: 1.45; 
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 6px; }
+        .control-label { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.82rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1.1px; 
+            color: var(--text-muted); 
+            font-weight: 500;
+        }
+        .control-value { 
+            color: var(--text-main); 
+            font-weight: 700; 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
+            font-size: 1.02rem; 
+        }
+
+        input[type=range] { 
+            -webkit-appearance: none; 
+            width: 100%; 
+            background: transparent; 
+            height: 22px; 
+            margin: 3px 0;
+        }
+        input[type=range]::-webkit-slider-runnable-track { 
+            width: 100%; 
+            height: 5px; 
+            cursor: pointer; 
+            background: rgba(255,255,255,0.14); 
+            border-radius: 3px; 
+        }
+        input[type=range]::-webkit-slider-thumb { 
+            height: 20px; 
+            width: 20px; 
+            border-radius: 50%; 
+            background: var(--accent-cyan); 
+            cursor: pointer; 
+            -webkit-appearance: none; 
+            margin-top: -7.5px; 
+            box-shadow: 0 0 12px var(--accent-cyan);
+            border: 2px solid #fff;
+        }
+
+        .freq-display { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-top: 4px; 
+        }
+        .freq-box { 
+            background: rgba(0,0,0,0.5); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            border-radius: 10px; 
+            padding: 13px 11px; 
+            text-align: center; 
+        }
+        .freq-box.left { border-bottom: 3px solid var(--accent-magenta); }
+        .freq-box.right { border-bottom: 3px solid var(--accent-cyan); }
+        .freq-label { 
+            font-size: 0.72rem; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 0.9px; 
+            margin-bottom: 3px; 
+        }
+        .freq-val { 
+            font-size: 1.28rem; 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
+            font-weight: 700; 
+            letter-spacing: 0.4px; 
+        }
+
+        .presets-section { margin-top: 4px; }
+        .presets-label { 
+            font-size: 0.78rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1.3px; 
+            color: var(--text-muted); 
+            margin-bottom: 9px; 
+            padding-left: 3px; 
+            font-weight: 500;
+        }
+        .presets-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); 
+            gap: 9px; 
+        }
+        
+        .preset-btn {
+            pointer-events: auto; 
+            background: var(--button-bg); 
+            border: 2px solid var(--border-color); 
+            color: var(--text-main);
+            padding: 14px 5px 12px; 
+            border-radius: 10px; 
+            font-size: 0.74rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1); 
+            text-align: center; 
+            line-height: 1.25;
+            min-height: 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 2px;
+        }
+        .preset-btn:hover { 
+            background: rgba(40, 40, 52, 0.95); 
+            border-color: var(--accent-cyan); 
+            transform: translateY(-1px); 
+            box-shadow: 0 5px 14px rgba(0, 229, 255, 0.18);
+        }
+        .preset-btn:active { 
+            transform: scale(0.96); 
+            transition: transform 0.04s;
+        }
+        .preset-btn .state { 
+            font-weight: 800; 
+            font-size: 0.82rem; 
+            letter-spacing: 1.4px; 
+            display: block; 
+        }
+        .preset-btn .freqs { 
+            font-size: 0.62rem; 
+            color: var(--text-muted); 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
+            line-height: 1.15; 
+        }
+
+        .preset-btn.delta { border-color: #6666ff; }
+        .preset-btn.theta { border-color: #33ff99; }
+        .preset-btn.alpha { border-color: #ffdd66; }
+        .preset-btn.beta { border-color: #ff9944; }
+        .preset-btn.gamma { border-color: #ff66dd; }
+
+        .target-state-panel {
+            background: rgba(0, 255, 136, 0.055); 
+            border: 1px solid rgba(0, 255, 136, 0.22); 
+            border-radius: 11px;
+            padding: 16px 18px; 
+            text-align: center; 
+            margin-top: 2px; 
+        }
+        .state-title { 
+            font-size: 0.78rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            color: var(--accent-green); 
+            margin-bottom: 4px; 
+            font-weight: 600;
+        }
+        .state-name { 
+            font-size: 2.0rem; 
+            font-weight: 800; 
+            letter-spacing: 4px; 
+            color: #fff; 
+            text-shadow: 0 0 18px rgba(0, 255, 136, 0.5); 
+            margin: 0 0 6px 0; 
+            text-transform: uppercase; 
+        }
+        .state-desc { 
+            font-size: 0.86rem; 
+            color: var(--text-muted); 
+            line-height: 1.5; 
+        }
+
+        #play-btn {
+            background: transparent; 
+            border: 2px solid var(--text-main); 
+            color: var(--text-main); 
+            padding: 17px 18px;
+            font-size: 1.02rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2.8px; 
+            border-radius: 11px; 
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1); 
+            margin-top: 4px; 
+            font-weight: 700;
+            min-height: 56px;
+        }
+        #play-btn:hover { 
+            background: rgba(255,255,255,0.07); 
+            border-color: #fff; 
+            color: #fff;
+        }
+        #play-btn.playing { 
+            background: rgba(0, 229, 255, 0.11); 
+            border-color: var(--accent-cyan); 
+            color: var(--accent-cyan);
+            box-shadow: 0 0 22px rgba(0, 229, 255, 0.28), inset 0 0 12px rgba(0, 229, 255, 0.12); 
+        }
+
+        .audio-warning { 
+            font-size: 0.76rem; 
+            color: #ffbb44; 
+            text-align: center; 
+            margin-top: -6px; 
+            opacity: 0.9; 
+            letter-spacing: 0.3px; 
+        }
+
+        .stats-panel {
+            pointer-events: auto; 
+            margin-top: 2px; 
+            background: rgba(0,0,0,0.48); 
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 10px; 
+            padding: 14px 16px; 
+            font-size: 0.88rem;
+        }
+        .stats-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 7px; 
+        }
+        .stats-row:last-child { margin-bottom: 0; }
+        .stats-label { 
+            color: var(--text-muted); 
+            font-weight: 500;
+        }
+        .stats-value { 
+            color: var(--accent-cyan); 
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
+            font-weight: 700; 
+            font-size: 0.98rem;
+        }
+
+        .more-info-btn {
+            pointer-events: auto;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 11px 15px;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-top: 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .more-info-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(0, 229, 255, 0.05);
+        }
+
+        .info-panel {
+            pointer-events: auto; 
+            position: absolute; 
+            right: 20px; 
+            bottom: 20px; 
+            width: 300px; 
+            max-width: 40vw;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color); 
+            border-radius: 14px; 
+            padding: 18px 20px; 
+            backdrop-filter: blur(14px);
+        }
+        @media (max-width: 768px) {
+            .info-panel { display: none; }
+        }
+        .info-panel h3 { 
+            font-size: 0.9rem; 
+            color: var(--text-main); 
+            text-transform: uppercase; 
+            letter-spacing: 1.3px; 
+            margin: 0 0 9px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.12); 
+            padding-bottom: 6px; 
+            font-weight: 600;
+        }
+        .info-panel p { 
+            font-size: 0.82rem; 
+            color: var(--text-muted); 
+            line-height: 1.55; 
+            margin: 0; 
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(5, 5, 7, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 16px;
+            pointer-events: auto;
+        }
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: #111114;
+            border: 1px solid #444450;
+            border-radius: 16px;
+            padding: 28px 24px;
+            max-width: 620px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.95);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+        .modal-header h2 {
+            font-size: 1.55rem;
+            margin: 0;
+            color: var(--accent-cyan);
+            line-height: 1.2;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 2.1rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 6px;
+            flex-shrink: 0;
+        }
+        .modal-close:hover { color: #fff; }
+
+        .modal-body {
+            font-size: 1.02rem;
+            line-height: 1.6;
+            color: #e8e8f0;
+        }
+        .modal-body p {
+            margin-bottom: 14px;
+        }
+        .modal-body strong {
+            color: var(--accent-cyan);
+        }
+        .modal-body h4 {
+            margin: 18px 0 7px;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+        .modal-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 15px 18px;
+            font-size: 1.0rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            border: 2px solid;
+            text-align: center;
+        }
+        .modal-btn.primary {
+            background: var(--accent-cyan);
+            color: #050507;
+            border-color: var(--accent-cyan);
+        }
+        .modal-btn.primary:hover {
+            background: #fff;
+            border-color: #fff;
+        }
+        .modal-btn.secondary {
+            background: transparent;
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+        .modal-btn.secondary:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .link-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0 0;
+        }
+        .link-list li {
+            margin-bottom: 13px;
+            padding-left: 2px;
+        }
+        .link-list a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.0rem;
+            display: block;
+            padding: 3px 0;
+        }
+        .link-list a:hover {
+            text-decoration: underline;
+        }
+        .link-list .link-desc {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            line-height: 1.35;
+        }
+
+        #top-controls { 
+            pointer-events: auto; 
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-end; 
+            gap: 10px; 
+            z-index: 10; 
+        }
+        #fullscreen-btn { 
+            background: var(--panel-bg); 
+            border: 1px solid var(--border-color); 
+            color: var(--text-main); 
+            padding: 9px 14px; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1.6px; 
+            border-radius: 9px; 
+            cursor: pointer; 
+            backdrop-filter: blur(12px); 
+            transition: all 0.3s ease; 
+            font-weight: 600; 
+        }
+        #fullscreen-btn:hover { 
+            background: rgba(255,255,255,0.07); 
+            border-color: var(--accent-cyan); 
+            color: var(--accent-cyan); 
+        }
+
+        #hide-ui-btn { 
+            background: transparent; 
+            border: none; 
+            color: var(--text-muted); 
+            cursor: pointer; 
+            padding: 5px; 
+            opacity: 0.5; 
+            transition: all 0.25s ease; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        #hide-ui-btn:hover { opacity: 1; color: var(--text-main); }
+
+        .ui-hidden .control-panel { 
+            opacity: 0; 
+            pointer-events: none; 
+            transform: translateX(-25px); 
+        }
+        .ui-hidden .info-panel { 
+            opacity: 0; 
+            pointer-events: none; 
+            transform: translateX(25px); 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div id="top-controls">
+            <button id="fullscreen-btn">Enter Fullscreen</button>
+            <button id="hide-ui-btn" title="Toggle Interface">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="control-panel">
+            <div class="header">
+                <h1>Hemi-Sync Interface</h1>
+                <p>Immersive binaural meditation • Progressive neural visualization</p>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Base Carrier Frequency</span>
+                    <span class="control-value" id="base-val">200.0 Hz</span>
+                </div>
+                <input type="range" id="base-slider" min="100" max="500" step="1" value="200">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Target Beat Frequency</span>
+                    <span class="control-value" id="beat-val">7.0 Hz</span>
+                </div>
+                <input type="range" id="beat-slider" min="0.5" max="40" step="0.1" value="7.0">
+            </div>
+
+            <div class="freq-display">
+                <div class="freq-box left">
+                    <div class="freq-label">Left Hemisphere</div>
+                    <div class="freq-val" id="left-hz">196.50 Hz</div>
+                </div>
+                <div class="freq-box right">
+                    <div class="freq-label">Right Hemisphere</div>
+                    <div class="freq-val" id="right-hz">203.50 Hz</div>
+                </div>
+            </div>
+
+            <div class="presets-section">
+                <div class="presets-label">Choose Your Brainwave State</div>
+                <div class="presets-grid">
+                    <button class="preset-btn delta" data-base="180" data-beat="3.0" data-state="delta">
+                        <span class="state">DELTA</span>
+                        <span class="freqs">3 Hz • Deep Healing</span>
+                    </button>
+                    <button class="preset-btn theta" data-base="200" data-beat="5.5" data-state="theta">
+                        <span class="state">THETA</span>
+                        <span class="freqs">5.5 Hz • Focus 10</span>
+                    </button>
+                    <button class="preset-btn alpha" data-base="200" data-beat="10" data-state="alpha">
+                        <span class="state">ALPHA</span>
+                        <span class="freqs">10 Hz • Relaxed Focus</span>
+                    </button>
+                    <button class="preset-btn beta" data-base="220" data-beat="16" data-state="beta">
+                        <span class="state">BETA</span>
+                        <span class="freqs">16 Hz • Active Mind</span>
+                    </button>
+                    <button class="preset-btn gamma" data-base="250" data-beat="40" data-state="gamma">
+                        <span class="state">GAMMA</span>
+                        <span class="freqs">40 Hz • Peak Awareness</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="target-state-panel" id="state-panel">
+                <div class="state-title">Current Induction Target</div>
+                <h2 class="state-name" id="state-name">THETA</h2>
+                <div class="state-desc" id="state-desc">
+                    Deep meditation, REM sleep, creativity, insight, subconscious connection.<br>
+                    <span style="opacity:0.7; font-size:0.8rem;">~5.1 breaths per minute</span>
+                </div>
+            </div>
+
+            <div class="stats-panel">
+                <div class="stats-row">
+                    <span class="stats-label">Fusion Rate</span>
+                    <span class="stats-value" id="fusion-rate">1.00×</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">Average Particle Size</span>
+                    <span class="stats-value" id="avg-size">1.00 fusions</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">Active Particles</span>
+                    <span class="stats-value" id="particle-count">2220</span>
+                </div>
+            </div>
+
+            <button id="play-btn">Begin Synchronization</button>
+            <div class="audio-warning">Best experienced with stereo headphones</div>
+
+            <button class="more-info-btn" id="more-info-btn">More Information About Hemi-Sync</button>
+        </div>
+
+        <div class="info-panel">
+            <h3>How This Works</h3>
+            <p>The particle field visualizes neural coherence. The expanding orb acts as a gentle breathing guide, helping you synchronize your breath with the target brainwave rhythm.</p>
+        </div>
+    </div>
+
+    <!-- Preset Modal -->
+    <div id="preset-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-preset-title">Theta State</h2>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body" id="modal-body-content">
+                <!-- JS populated -->
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn primary" id="modal-start-btn">Begin This Session</button>
+                <button class="modal-btn secondary" id="modal-cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- More Info Modal -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Learn More About Hemi-Sync</h2>
+                <button class="modal-close" id="info-modal-close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <p><strong>Hemi-Sync</strong> (Hemispheric Synchronization) is an audio technology developed by Robert A. Monroe and The Monroe Institute. It uses binaural beats to gently guide the brain into specific states of consciousness.</p>
+                
+                <p>The technology works by playing slightly different frequencies in each ear. Your brain perceives the difference as a third “beat” frequency, helping to entrain brainwaves toward desired patterns for meditation, focus, sleep, or expanded awareness.</p>
+                
+                <h4>Helpful Resources</h4>
+                
+                <ul class="link-list">
+                    <li>
+                        <a href="https://en.wikipedia.org/wiki/Robert_Monroe" target="_blank" rel="noopener">Robert A. Monroe – Wikipedia</a>
+                        <div class="link-desc">Biography of the founder and pioneer of out-of-body exploration.</div>
+                    </li>
+                    <li>
+                        <a href="https://www.monroeinstitute.org/" target="_blank" rel="noopener">The Monroe Institute</a>
+                        <div class="link-desc">Official home of Hemi-Sync technology and consciousness exploration programs.</div>
+                    </li>
+                    <li>
+                        <a href="https://hemi-sync.com/" target="_blank" rel="noopener">Hemi-Sync Official</a>
+                        <div class="link-desc">Information and audio programs from the creators of the technology.</div>
+                    </li>
+                    <li>
+                        <a href="https://en.wikipedia.org/wiki/Binaural_beats" target="_blank" rel="noopener">Binaural Beats – Wikipedia</a>
+                        <div class="link-desc">Scientific background on how binaural beats influence brainwave states.</div>
+                    </li>
+                    <li>
+                        <a href="https://www.monroeinstitute.org/pages/out-of-body-experience" target="_blank" rel="noopener">Out-of-Body Experiences at Monroe</a>
+                        <div class="link-desc">Learn about the Gateway Experience and related programs.</div>
+                    </li>
+                </ul>
+                
+                <p style="margin-top: 20px; font-size: 0.92rem; opacity: 0.85;">
+                    This interface is an artistic interpretation created for personal meditation and exploration. It combines classic Hemi-Sync principles with immersive visual and audio feedback.
+                </p>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="info-modal-close-btn2" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        function playClickSound() {
+            if (!audioSystem.ctx) return;
+            try {
+                const osc = audioSystem.ctx.createOscillator();
+                const gain = audioSystem.ctx.createGain();
+                const filter = audioSystem.ctx.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.value = 880;
+                filter.type = 'lowpass';
+                filter.frequency.value = 1200;
+
+                gain.gain.value = 0.0001;
+                gain.gain.setValueAtTime(0.18, audioSystem.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioSystem.ctx.currentTime + 0.18);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioSystem.masterGain || audioSystem.ctx.destination);
+
+                osc.start();
+                osc.stop(audioSystem.ctx.currentTime + 0.22);
+            } catch (e) {}
+        }
+
+        const particleAudio = {
+            ctx: null,
+            movementGain: null,
+            spawnGain: null,
+            fusionGain: null,
+            isActive: false,
+
+            init(audioContext, movementGainNode, spawnGainNode, fusionGainNode) {
+                this.ctx = audioContext;
+                this.movementGain = movementGainNode;
+                this.spawnGain = spawnGainNode;
+                this.fusionGain = fusionGainNode;
+                this.isActive = true;
+            },
+
+            createSmoothBuffer(duration = 0.16) {
+                const length = Math.floor(this.ctx.sampleRate * duration);
+                const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < length; i++) {
+                    const fade = Math.sin((i / length) * Math.PI);
+                    data[i] = (Math.random() * 2 - 1) * fade * 0.9;
+                }
+                return buffer;
+            },
+
+            playSmoothGrain({ buffer, startTime, duration, pitch = 1.0, pan = 0, volume = 0.4, filterFreq = 900, destination }) {
+                if (!this.isActive || !this.ctx) return;
+                const source = this.ctx.createBufferSource();
+                source.buffer = buffer;
+                source.playbackRate.value = pitch;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = filterFreq;
+
+                const gain = this.ctx.createGain();
+                const now = startTime || this.ctx.currentTime;
+
+                gain.gain.value = 0.0001;
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(volume, now + duration * 0.25);
+                gain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+                const panner = this.ctx.createStereoPanner();
+                panner.pan.value = pan;
+
+                source.connect(filter);
+                filter.connect(gain);
+                gain.connect(panner);
+                panner.connect(destination || this.movementGain);
+
+                source.start(now);
+                source.stop(now + duration + 0.1);
+            },
+
+            playWhooshLayer(intensity, direction, side, duration = 1.1) {
+                if (!this.isActive) return;
+                const now = this.ctx.currentTime;
+                const noise = this.ctx.createBufferSource();
+                const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * duration * 1.1, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                const gain = this.ctx.createGain();
+                const panner = this.ctx.createStereoPanner();
+
+                const basePan = side < 0 ? -0.82 : 0.82;
+                panner.pan.value = basePan + (Math.random() - 0.5) * 0.12;
+
+                if (direction > 0) {
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 520 + intensity * 480;
+                    gain.gain.value = 0.0001;
+                    gain.gain.setValueAtTime(0.065 * intensity, now);
+                    gain.gain.linearRampToValueAtTime(0.0001, now + duration);
+                } else {
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 680 - intensity * 220;
+                    gain.gain.value = 0.0001;
+                    gain.gain.setValueAtTime(0.055 * intensity, now);
+                    gain.gain.linearRampToValueAtTime(0.0001, now + duration * 0.95);
+                }
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(panner);
+                panner.connect(this.movementGain);
+
+                noise.start(now);
+                noise.stop(now + duration + 0.2);
+            },
+
+            playInhale(intensity, side) {
+                if (!this.isActive) return;
+                this.playWhooshLayer(intensity, 1, side, 1.15);
+                const now = this.ctx.currentTime;
+                const grainCount = Math.floor(12 + intensity * 16);
+                const grainBuffer = this.createSmoothBuffer(0.16 + intensity * 0.04);
+
+                for (let i = 0; i < grainCount; i++) {
+                    const delay = (i / grainCount) * 0.85 + Math.random() * 0.12;
+                    const grainDuration = 0.14 + Math.random() * 0.06;
+                    const pitch = 0.96 + intensity * 0.28 + (Math.random() - 0.5) * 0.08;
+                    const pan = (side < 0 ? -0.82 : 0.82) + (Math.random() - 0.5) * 0.22;
+                    const volume = 0.032 + intensity * 0.048;
+                    const filterFreq = 820 + intensity * 380;
+
+                    this.playSmoothGrain({ buffer: grainBuffer, startTime: now + delay, duration: grainDuration, pitch, pan, volume, filterFreq });
+                }
+            },
+
+            playExhale(intensity, side) {
+                if (!this.isActive) return;
+                this.playWhooshLayer(intensity, -1, side, 1.05);
+                const now = this.ctx.currentTime;
+                const grainCount = Math.floor(9 + intensity * 13);
+                const grainBuffer = this.createSmoothBuffer(0.15);
+
+                for (let i = 0; i < grainCount; i++) {
+                    const delay = (i / grainCount) * 0.75 + Math.random() * 0.1;
+                    const grainDuration = 0.13 + Math.random() * 0.05;
+                    const pitch = 0.92 + intensity * 0.18 + (Math.random() - 0.5) * 0.06;
+                    const pan = (side < 0 ? -0.82 : 0.82) + (Math.random() - 0.5) * 0.2;
+                    const volume = 0.028 + intensity * 0.042;
+                    const filterFreq = 780 - intensity * 180;
+
+                    this.playSmoothGrain({ buffer: grainBuffer, startTime: now + delay, duration: grainDuration, pitch, pan, volume, filterFreq });
+                }
+            },
+
+            playFusionSound(leftSide, intensity = 1.0, fusionLevel = 1) {
+                if (!this.ctx || !this.isActive) return;
+                const now = this.ctx.currentTime;
+
+                const baseFreq = leftSide ? 620 + Math.random() * 80 : 780 + Math.random() * 90;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+                const panner = this.ctx.createStereoPanner();
+
+                osc.type = leftSide ? 'sine' : 'triangle';
+                osc.frequency.value = baseFreq;
+                filter.type = 'lowpass';
+                filter.frequency.value = leftSide ? 920 : 1150;
+                panner.pan.value = leftSide ? -0.85 : 0.85;
+
+                const peak = 0.12 * intensity * (0.7 + fusionLevel * 0.15);
+                gain.gain.value = 0.0001;
+                gain.gain.setValueAtTime(peak, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28 + fusionLevel * 0.08);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(panner);
+                panner.connect(this.fusionGain);
+
+                osc.start(now);
+                osc.stop(now + 0.45);
+
+                if (fusionLevel > 1.5) {
+                    const noise = this.ctx.createBufferSource();
+                    const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.35, this.ctx.sampleRate);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+                    noise.buffer = buf;
+
+                    const nf = this.ctx.createBiquadFilter();
+                    nf.type = 'bandpass';
+                    nf.frequency.value = 1450 + fusionLevel * 180;
+                    nf.Q.value = 1.8;
+
+                    const ng = this.ctx.createGain();
+                    ng.gain.value = 0.0001;
+                    ng.gain.setValueAtTime(0.035 * intensity * (fusionLevel - 0.8), now + 0.02);
+                    ng.gain.linearRampToValueAtTime(0.0001, now + 0.32);
+
+                    const np = this.ctx.createStereoPanner();
+                    np.pan.value = leftSide ? -0.6 : 0.6;
+
+                    noise.connect(nf);
+                    nf.connect(ng);
+                    ng.connect(np);
+                    np.connect(this.fusionGain);
+
+                    noise.start(now + 0.015);
+                    noise.stop(now + 0.42);
+                }
+            },
+
+            playSpawnBurst(particleCount) {
+                if (!this.isActive) return;
+                const now = this.ctx.currentTime;
+                const intensity = Math.min(1.0, particleCount / 55);
+                const noise = this.ctx.createBufferSource();
+                const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 1.3, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 920 + intensity * 280;
+
+                const gain = this.ctx.createGain();
+                gain.gain.value = 0.0001;
+                gain.gain.setValueAtTime(0.07 * intensity, now);
+                gain.gain.linearRampToValueAtTime(0.0001, now + 1.1);
+
+                const panner = this.ctx.createStereoPanner();
+                panner.pan.value = (Math.random() - 0.5) * 0.5;
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(panner);
+                panner.connect(this.spawnGain);
+
+                noise.start(now);
+                noise.stop(now + 1.4);
+            }
+        };
+
+        const audioSystem = {
+            ctx: null,
+            leftOsc: null, rightOsc: null,
+            leftGain: null, rightGain: null,
+            pannerLeft: null, pannerRight: null,
+            masterGain: null,
+            fusionGain: null,
+            deepBreathGain: null,
+            spawnGain: null,
+            movementGain: null,
+            
+            leftMovementPanner: null,
+            rightMovementPanner: null,
+            spherePanner: null,
+            
+            isPlaying: false,
+            lastMovementSoundTime: 0,
+            lastExpansionBurstTime: 0,
+
+            init() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.33;
+                this.masterGain.connect(this.ctx.destination);
+
+                this.leftOsc = this.ctx.createOscillator();
+                this.rightOsc = this.ctx.createOscillator();
+                this.leftGain = this.ctx.createGain();
+                this.rightGain = this.ctx.createGain();
+
+                if (this.ctx.createStereoPanner) {
+                    this.pannerLeft = this.ctx.createStereoPanner(); this.pannerLeft.pan.value = -1;
+                    this.pannerRight = this.ctx.createStereoPanner(); this.pannerRight.pan.value = 1;
+                } else {
+                    this.pannerLeft = this.ctx.createPanner(); this.pannerLeft.setPosition(-1, 0, 0);
+                    this.pannerRight = this.ctx.createPanner(); this.pannerRight.setPosition(1, 0, 0);
+                }
+
+                this.leftOsc.connect(this.leftGain); this.leftGain.connect(this.pannerLeft); this.pannerLeft.connect(this.masterGain);
+                this.rightOsc.connect(this.rightGain); this.rightGain.connect(this.pannerRight); this.pannerRight.connect(this.masterGain);
+
+                this.leftGain.gain.value = 0; this.rightGain.gain.value = 0;
+                this.leftOsc.start(); this.rightOsc.start();
+
+                this.fusionGain = this.ctx.createGain();
+                this.fusionGain.gain.value = 0.28;
+                this.fusionGain.connect(this.masterGain);
+
+                this.deepBreathGain = this.ctx.createGain();
+                this.deepBreathGain.gain.value = 0.14;
+                this.deepBreathGain.connect(this.masterGain);
+
+                this.spawnGain = this.ctx.createGain();
+                this.spawnGain.gain.value = 0.18;
+                this.spawnGain.connect(this.masterGain);
+
+                this.movementGain = this.ctx.createGain();
+                this.movementGain.gain.value = 0.38;
+                this.movementGain.connect(this.masterGain);
+
+                particleAudio.init(this.ctx, this.movementGain, this.spawnGain, this.fusionGain);
+
+                this.leftMovementPanner = this.createHRTFPanner(-4.5, 0, -2.5);
+                this.rightMovementPanner = this.createHRTFPanner(4.5, 0, -2.5);
+                this.spherePanner = this.createHRTFPanner(0, 1.2, -3.5);
+
+                this.leftMovementPanner.connect(this.movementGain);
+                this.rightMovementPanner.connect(this.movementGain);
+                this.spherePanner.connect(this.deepBreathGain);
+            },
+
+            createHRTFPanner(x, y, z) {
+                const panner = this.ctx.createPanner();
+                panner.panningModel = 'HRTF';
+                panner.distanceModel = 'inverse';
+                panner.refDistance = 2.5;
+                panner.maxDistance = 80;
+                panner.rolloffFactor = 1.3;
+                panner.positionX.value = x;
+                panner.positionY.value = y;
+                panner.positionZ.value = z;
+                return panner;
+            },
+
+            updateFrequencies(base, beat) {
+                if (!this.ctx) return;
+                const leftFreq = base - (beat / 2);
+                const rightFreq = base + (beat / 2);
+                const now = this.ctx.currentTime;
+                this.leftOsc.frequency.setTargetAtTime(leftFreq, now, 0.1);
+                this.rightOsc.frequency.setTargetAtTime(rightFreq, now, 0.1);
+            },
+
+            toggle() {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const now = this.ctx.currentTime;
+                if (this.isPlaying) {
+                    this.leftGain.gain.setTargetAtTime(0, now, 0.5);
+                    this.rightGain.gain.setTargetAtTime(0, now, 0.5);
+                    this.isPlaying = false;
+                } else {
+                    this.leftGain.gain.setTargetAtTime(1, now, 2.0);
+                    this.rightGain.gain.setTargetAtTime(1, now, 2.0);
+                    this.isPlaying = true;
+                }
+                return this.isPlaying;
+            },
+
+            playConnectionMoment() {
+                if (!this.ctx || !this.isPlaying) return;
+                const now = this.ctx.currentTime;
+
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        if (!this.isPlaying) return;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        const filter = this.ctx.createBiquadFilter();
+                        const panner = this.ctx.createStereoPanner();
+
+                        const freq = 475 + (i * 78);
+                        osc.type = (i % 2 === 0) ? 'sine' : 'triangle';
+                        osc.frequency.value = freq;
+                        filter.type = 'lowpass';
+                        filter.frequency.value = 800 + (i * 26);
+                        panner.pan.value = (i - 2) * 0.25;
+
+                        gain.gain.value = 0.0001;
+                        gain.gain.setValueAtTime(0.046, now + (i * 0.052));
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.92 + (i * 0.052));
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(panner);
+                        panner.connect(this.fusionGain);
+
+                        osc.start(now + (i * 0.052));
+                        osc.stop(now + 1.2 + (i * 0.052));
+                    }, i * 28);
+                }
+            },
+
+            playParticleSpawnSound(particleCount = 60) {
+                if (!this.ctx || !this.isPlaying) return;
+                particleAudio.playSpawnBurst(particleCount);
+            },
+
+            playHemisphericMovementSound(intensity, direction, side) {
+                if (!this.ctx || !this.isPlaying) return;
+
+                const now = this.ctx.currentTime;
+                if (now - this.lastMovementSoundTime < 0.08) return;
+                this.lastMovementSoundTime = now;
+
+                const panner = side < 0 ? this.leftMovementPanner : this.rightMovementPanner;
+
+                const baseX = side < 0 ? -4.5 : 4.5;
+                const targetX = baseX + (direction * intensity * 2.3);
+                const targetY = direction > 0 ? intensity * 1.7 : -intensity * 0.9;
+                const targetZ = -2.5 - (intensity * 1.9);
+
+                panner.positionX.value = panner.positionX.value * 0.45 + targetX * 0.55;
+                panner.positionY.value = panner.positionY.value * 0.45 + targetY * 0.55;
+                panner.positionZ.value = panner.positionZ.value * 0.45 + targetZ * 0.55;
+
+                if (direction > 0) {
+                    particleAudio.playInhale(intensity, side);
+                } else {
+                    particleAudio.playExhale(intensity, side);
+                }
+            },
+
+            playExpansionBurst(intensity) {
+                if (!this.ctx || !this.isPlaying) return;
+                const now = this.ctx.currentTime;
+                if (now - this.lastExpansionBurstTime < 0.22) return;
+                this.lastExpansionBurstTime = now;
+
+                particleAudio.playInhale(intensity * 1.05, 0);
+                setTimeout(() => {
+                    if (this.isPlaying) particleAudio.playInhale(intensity * 0.9, 1);
+                }, 14);
+            },
+
+            playDeepBreath() {
+                if (!this.ctx || !this.isPlaying) return;
+
+                const now = this.ctx.currentTime;
+                this.spherePanner.positionY.value = 1.2 + (this.deepBreathIntensity || 0) * 2.7;
+                this.spherePanner.positionZ.value = -3.5 - (this.deepBreathIntensity || 0) * 2.3;
+
+                const noise = this.ctx.createBufferSource();
+                const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 2.0, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                noise.buffer = buffer;
+
+                const noiseFilter = this.ctx.createBiquadFilter();
+                noiseFilter.type = 'lowpass';
+                noiseFilter.frequency.value = 510;
+
+                const noiseGain = this.ctx.createGain();
+                noiseGain.gain.value = 0.0001;
+                noiseGain.gain.setValueAtTime(0.068, now);
+                noiseGain.gain.linearRampToValueAtTime(0.0001, now + 1.75);
+
+                const tone = this.ctx.createOscillator();
+                tone.type = 'sine';
+                tone.frequency.value = 64;
+
+                const toneGain = this.ctx.createGain();
+                toneGain.gain.value = 0.0001;
+                toneGain.gain.setValueAtTime(0.042, now + 0.2);
+                toneGain.gain.linearRampToValueAtTime(0.0001, now + 2.05);
+
+                const master = this.ctx.createGain();
+                master.gain.value = 0.5;
+
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                tone.connect(toneGain);
+                noiseGain.connect(master);
+                toneGain.connect(master);
+                master.connect(this.spherePanner);
+
+                noise.start(now);
+                tone.start(now + 0.16);
+                noise.stop(now + 2.15);
+                tone.stop(now + 2.35);
+            }
+        };
+
+        const visualSystem = {
+            scene: null,
+            camera: null,
+            renderer: null,
+            particles: null,
+            sphere: null,
+            sphereMaterial: null,
+            halo: null,
+            haloMaterial: null,
+            releasedParticles: null,
+            clock: null,
+            fusionCheckTimer: 0,
+            deepBreathTimer: 0,
+            lastDeepBreath: 0,
+            deepBreathIntensity: 0,
+            deepBreathHoldUntil: 0,
+            deepBreathExtra: 0,
+            prevSphereR: 2.0,
+            meditationDuration: 0,
+            totalFusions: 0,
+            maxFusionLevel: 1,
+            
+            baseUniforms: {
+                time: { value: 0 },
+                coherence: { value: 0 },
+                beatFreq: { value: 7.0 },
+                sphereRadius: { value: 2.0 },
+                deepBreath: { value: 0.0 }
+            },
+            
+            init() {
+                const container = document.getElementById('canvas-container');
+                
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x050507, 0.046);
+
+                this.camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 1200);
+                this.camera.position.set(0, 0.52, 20.5);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                container.appendChild(this.renderer.domElement);
+
+                this.clock = new THREE.Clock();
+
+                this.createNeuralLattice();
+                this.createReleasedParticles();
+                
+                window.addEventListener('resize', this.onWindowResize.bind(this));
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => this.onWindowResize(), 150);
+                });
+                
+                this.animate();
+            },
+
+            getBreathingPeriod(beatFreq) {
+                if (beatFreq <= 3.9) return 17.5;
+                if (beatFreq <= 7.9) return 11.8;
+                if (beatFreq <= 13.9) return 8.2;
+                if (beatFreq <= 29.9) return 5.4;
+                return 3.6;
+            },
+
+            createNeuralLattice() {
+                const particleCount = 2220;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const sideInfo = new Float32Array(particleCount);
+                const fusion = new Float32Array(particleCount);
+
+                const colorLeft = new THREE.Color(0xff3366);
+                const colorRight = new THREE.Color(0x00e5ff);
+                const colorCenter = new THREE.Color(0xaa00ff);
+
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos((Math.random() * 2) - 1);
+                    let r = 4.05 + (Math.random() * 2.65);
+                    let x = r * Math.sin(phi) * Math.cos(theta);
+                    let y = r * Math.sin(phi) * Math.sin(theta) * 0.79;
+                    let z = (r * 1.28) * Math.cos(phi);
+                    const side = x < 0 ? -1 : 1;
+                    if (Math.abs(x) < 0.5) x += side * 0.55; else x += side * 1.25;
+                    
+                    positions[i3] = x; positions[i3+1] = y; positions[i3+2] = z;
+
+                    let mixFactor = Math.min(1, Math.max(0, Math.abs(x) / 5.2));
+                    let finalColor = new THREE.Color();
+                    if (side < 0) finalColor.lerpColors(colorCenter, colorLeft, mixFactor);
+                    else finalColor.lerpColors(colorCenter, colorRight, mixFactor);
+                    
+                    colors[i3] = finalColor.r; colors[i3+1] = finalColor.g; colors[i3+2] = finalColor.b;
+                    sizes[i] = Math.random() * 1.72 + 0.48;
+                    sideInfo[i] = side;
+                    fusion[i] = 0;
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('side', new THREE.BufferAttribute(sideInfo, 1));
+                geometry.setAttribute('fusion', new THREE.BufferAttribute(fusion, 1));
+
+                const material = new THREE.ShaderMaterial({
+                    uniforms: this.baseUniforms,
+                    vertexShader: `
+                        uniform float time;
+                        uniform float coherence;
+                        uniform float beatFreq;
+                        uniform float sphereRadius;
+                        uniform float deepBreath;
+                        attribute float size;
+                        attribute float side;
+                        attribute float fusion;
+                        attribute vec3 color;
+                        varying vec3 vColor;
+                        varying float vFusion;
+                        
+                        void main() {
+                            vColor = color;
+                            vFusion = fusion;
+                            
+                            vec3 pos = position;
+                            
+                            float noise = sin(time * 0.45 + pos.x * 0.68) * cos(time * 0.34 + pos.y * 0.48);
+                            pos += normalize(pos) * noise * 0.11 * (0.3 + 0.7 * coherence);
+                            
+                            float phaseOffset = side * (1.0 - coherence) * 2.4;
+                            float pulse = sin(time * beatFreq * 6.28318 + phaseOffset);
+                            float scaleMod = 1.0 + (pulse * 0.34 * coherence);
+                            
+                            float dist = length(pos);
+                            if (dist > 0.05) {
+                                vec3 radial = normalize(pos);
+                                float preferredDist = 4.95 + sphereRadius * 0.78;
+                                float diff = preferredDist - dist;
+                                pos += radial * (diff * 0.027 * coherence);
+                                
+                                float repelThreshold = sphereRadius + 1.95;
+                                if (dist < repelThreshold) {
+                                    float push = (repelThreshold - dist) * 1.05 * coherence;
+                                    pos += radial * push;
+                                }
+                            }
+                            
+                            float grav = 0.00082 + (deepBreath * 0.0018);
+                            pos *= (1.0 - grav * coherence);
+                            
+                            float fusionScale = 1.0 + fusion * 1.12;
+                            float deepMod = 1.0 + deepBreath * 0.42;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            gl_PointSize = size * scaleMod * fusionScale * deepMod * (27.5 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vFusion;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            
+                            float alpha = smoothstep(0.5, 0.14, dist);
+                            vec3 finalColor = vColor;
+                            
+                            if (vFusion > 0.5) {
+                                float t = min(vFusion / 3.0, 1.0);
+                                finalColor = mix(vColor, vec3(0.93, 0.91, 1.0), t * 0.48);
+                            }
+                            
+                            gl_FragColor = vec4(finalColor, alpha * 0.83);
+                        }
+                    `,
+                    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+                
+                const coreGeo = new THREE.SphereGeometry(2.0, 48, 48);
+                this.sphereMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xaa00ff, transparent: true, opacity: 0.055,
+                    blending: THREE.AdditiveBlending, depthWrite: false
+                });
+                this.sphere = new THREE.Mesh(coreGeo, this.sphereMaterial);
+                this.scene.add(this.sphere);
+                
+                const haloGeo = new THREE.SphereGeometry(3.05, 42, 42);
+                this.haloMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xaa00ff, transparent: true, opacity: 0.017,
+                    blending: THREE.AdditiveBlending, depthWrite: false
+                });
+                this.halo = new THREE.Mesh(haloGeo, this.haloMaterial);
+                this.scene.add(this.halo);
+            },
+
+            createReleasedParticles() {
+                const count = 60;
+                const geo = new THREE.BufferGeometry();
+                const pos = new Float32Array(count * 3);
+                const col = new Float32Array(count * 3);
+                const sz = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    pos[i*3] = (Math.random()-0.5) * 2.8;
+                    pos[i*3+1] = (Math.random()-0.5) * 2.8;
+                    pos[i*3+2] = (Math.random()-0.5) * 2.8;
+                    col[i*3] = 0.58; col[i*3+1] = 0.96; col[i*3+2] = 0.68;
+                    sz[i] = 0.55 + Math.random() * 1.0;
+                }
+                
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+                geo.setAttribute('size', new THREE.BufferAttribute(sz, 1));
+                
+                const mat = new THREE.ShaderMaterial({
+                    uniforms: { time: this.baseUniforms.time },
+                    vertexShader: `
+                        uniform float time;
+                        attribute float size;
+                        varying vec3 vColor;
+                        void main() {
+                            vColor = color;
+                            vec3 p = position;
+                            float s = size * (0.65 + sin(time * 2.8 + float(gl_VertexID)) * 0.28);
+                            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                            gl_PointSize = s * (25.0 / -mv.z);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        void main() {
+                            float d = length(gl_PointCoord - vec2(0.5));
+                            if (d > 0.5) discard;
+                            float a = smoothstep(0.5, 0.08, d);
+                            gl_FragColor = vec4(vColor, a * 0.88);
+                        }
+                    `,
+                    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+                });
+                
+                this.releasedParticles = new THREE.Points(geo, mat);
+                this.releasedParticles.visible = false;
+                this.scene.add(this.releasedParticles);
+            },
+
+            resetParticleSizes() {
+                if (!this.particles) return;
+                const geometry = this.particles.geometry;
+                const sizeAttr = geometry.attributes.size;
+                const fusionAttr = geometry.attributes.fusion;
+                
+                for (let i = 0; i < sizeAttr.array.length; i++) {
+                    sizeAttr.array[i] = Math.random() * 1.72 + 0.48;
+                    fusionAttr.array[i] = 0;
+                }
+                sizeAttr.needsUpdate = true;
+                fusionAttr.needsUpdate = true;
+                this.meditationDuration = 0;
+                this.totalFusions = 0;
+                this.maxFusionLevel = 1;
+            },
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            },
+
+            updateStats(fusionMultiplier, avgFusion, particleCount) {
+                const rateEl = document.getElementById('fusion-rate');
+                const sizeEl = document.getElementById('avg-size');
+                const countEl = document.getElementById('particle-count');
+
+                if (rateEl) rateEl.textContent = fusionMultiplier.toFixed(2) + '×';
+                if (sizeEl) sizeEl.textContent = avgFusion.toFixed(2) + ' fusions';
+                if (countEl) countEl.textContent = particleCount;
+            },
+
+            simulateFusion(dt, coherence, breathPhase, isHolding) {
+                if (!this.particles || coherence < 0.42) return;
+                
+                this.fusionCheckTimer += dt;
+                
+                const timeMultiplier = 1.0 + Math.pow(Math.min(this.meditationDuration / 90, 8), 1.6);
+                const interval = Math.max(0.045, (isHolding ? 0.065 : 0.125) / timeMultiplier);
+                
+                if (this.fusionCheckTimer < interval) return;
+                this.fusionCheckTimer = 0;
+                
+                const geometry = this.particles.geometry;
+                const fusionAttr = geometry.attributes.fusion;
+                const posAttr = geometry.attributes.position;
+                const sizeAttr = geometry.attributes.size;
+                
+                const positions = posAttr.array;
+                const fusions = fusionAttr.array;
+                const particleCount = fusions.length;
+                
+                const shouldFuse = breathPhase < 0.1 || isHolding;
+                if (!shouldFuse) return;
+                
+                let multiplier = timeMultiplier;
+                if (isHolding) multiplier *= 2.8;
+                
+                let checks = Math.floor(85 * multiplier);
+                checks = Math.min(checks, 380);
+                
+                let fusionsMade = 0;
+                let totalFusionSum = 0;
+                let activeParticles = 0;
+                
+                for (let c = 0; c < checks; c++) {
+                    const i = Math.floor(Math.random() * particleCount);
+                    const j = Math.floor(Math.random() * particleCount);
+                    if (i === j) continue;
+                    
+                    const i3 = i * 3, j3 = j * 3;
+                    const dx = positions[i3] - positions[j3];
+                    const dy = positions[i3+1] - positions[j3+1];
+                    const dz = positions[i3+2] - positions[j3+2];
+                    const distSq = dx*dx + dy*dy + dz*dz;
+                    
+                    const threshold = isHolding ? 1.55 : 1.18;
+                    
+                    if (distSq < threshold && distSq > 0.015) {
+                        const beforeI = fusions[i];
+                        const beforeJ = fusions[j];
+                        
+                        fusions[i] = Math.min(8, fusions[i] + 1);
+                        fusions[j] = Math.min(8, fusions[j] + 1);
+                        
+                        sizeAttr.array[i] *= isHolding ? 1.09 : 1.055;
+                        
+                        if ((beforeI > 0 || beforeJ > 0) && (fusions[i] + fusions[j] >= 2)) {
+                            const avgX = (positions[i3] + positions[j3]) / 2;
+                            const fusionLevel = (fusions[i] + fusions[j]) / 2;
+                            particleAudio.playFusionSound(avgX < 0, isHolding ? 1.3 : 1.0, fusionLevel);
+                        }
+                        
+                        this.totalFusions++;
+                        fusionsMade++;
+                        
+                        if (fusions[i] > this.maxFusionLevel) this.maxFusionLevel = fusions[i];
+                        if (fusions[j] > this.maxFusionLevel) this.maxFusionLevel = fusions[j];
+                        
+                        if (fusionsMade > (isHolding ? 12 : 7)) break;
+                    }
+                }
+                
+                for (let i = 0; i < particleCount; i++) {
+                    totalFusionSum += fusions[i];
+                    if (fusions[i] < 8) activeParticles++;
+                }
+                
+                const avgFusion = totalFusionSum / particleCount;
+                const fusionMultiplier = timeMultiplier;
+                
+                this.updateStats(fusionMultiplier, avgFusion, activeParticles);
+                
+                if (fusionsMade > 0) {
+                    fusionAttr.needsUpdate = true;
+                    sizeAttr.needsUpdate = true;
+                }
+            },
+
+            triggerDeepBreath() {
+                if (!this.sphere || !this.sphereMaterial || !this.haloMaterial) return;
+                
+                const now = this.clock.getElapsedTime();
+                if (now - this.lastDeepBreath < 17.5) return;
+                this.lastDeepBreath = now;
+                
+                this.deepBreathIntensity = 0.2;
+                this.deepBreathExtra = 0.0;
+                this.baseUniforms.deepBreath.value = 0.2;
+                
+                this.deepBreathHoldUntil = now + 1.9 + Math.random() * 0.65;
+                
+                setTimeout(() => {
+                    if (audioSystem.isPlaying) audioSystem.playConnectionMoment();
+                }, 360);
+                
+                if (this.releasedParticles) {
+                    this.releasedParticles.visible = true;
+                    const posAttr = this.releasedParticles.geometry.attributes.position;
+                    const particleCount = posAttr.array.length / 3;
+                    
+                    for (let i = 0; i < posAttr.array.length; i += 3) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const r = 1.52 + Math.random() * 2.65;
+                        posAttr.array[i]   = Math.cos(angle) * r * (0.43 + Math.random());
+                        posAttr.array[i+1] = (Math.random() - 0.5) * 2.25;
+                        posAttr.array[i+2] = Math.sin(angle) * r * (0.43 + Math.random());
+                    }
+                    posAttr.needsUpdate = true;
+                    
+                    setTimeout(() => {
+                        if (audioSystem.isPlaying) audioSystem.playParticleSpawnSound(particleCount);
+                    }, 160);
+                    
+                    setTimeout(() => {
+                        if (this.releasedParticles) this.releasedParticles.visible = false;
+                    }, 3050);
+                }
+                
+                audioSystem.playDeepBreath();
+            },
+
+            animate() {
+                requestAnimationFrame(this.animate.bind(this));
+                
+                const dt = this.clock.getDelta();
+                const time = this.clock.getElapsedTime();
+                
+                this.baseUniforms.time.value = time;
+                
+                const targetCoherence = audioSystem.isPlaying ? 1.0 : 0.0;
+                this.baseUniforms.coherence.value += (targetCoherence - this.baseUniforms.coherence.value) * dt * 0.48;
+
+                if (audioSystem.isPlaying) this.meditationDuration += dt;
+
+                const coherence = this.baseUniforms.coherence.value;
+                const beatFreq = this.baseUniforms.beatFreq.value;
+                let deepBreathUniform = this.baseUniforms.deepBreath.value;
+                
+                const isHolding = time < this.deepBreathHoldUntil;
+                
+                const targetIntensity = (deepBreathUniform > 0.16 || isHolding) ? 1.0 : 0.0;
+                this.deepBreathIntensity += (targetIntensity - this.deepBreathIntensity) * dt * 0.82;
+                
+                const targetExtra = (deepBreathUniform > 0.16 || isHolding) ? 1.6 : 0.0;
+                this.deepBreathExtra += (targetExtra - this.deepBreathExtra) * dt * 0.7;
+                
+                if (deepBreathUniform > 0.01) {
+                    deepBreathUniform -= dt * 0.56;
+                    if (deepBreathUniform < 0) deepBreathUniform = 0;
+                    this.baseUniforms.deepBreath.value = deepBreathUniform;
+                }
+                
+                let sphereR = 2.0;
+                let coreOpacity = 0.055;
+                let haloOpacity = 0.016;
+                let haloExtra = 1.0;
+                let breathPhase = 0;
+                
+                if (coherence > 0.02) {
+                    const period = this.getBreathingPeriod(beatFreq);
+                    const breathSpeed = (2 * Math.PI) / period;
+                    breathPhase = Math.sin(time * breathSpeed);
+                    
+                    this.deepBreathTimer += dt;
+                    if (breathPhase > 0.61 && this.deepBreathTimer > 7.0 && Math.random() < 0.11) {
+                        this.triggerDeepBreath();
+                        this.deepBreathTimer = 0;
+                    }
+                    
+                    let effectivePhase = breathPhase;
+                    if (isHolding && breathPhase > 0.45) {
+                        effectivePhase = 0.945;
+                    }
+                    
+                    const radiusAmp = (2.52 + this.deepBreathExtra * 0.78) * coherence;
+                    sphereR = 2.14 + radiusAmp * effectivePhase;
+                    
+                    const radiusDelta = sphereR - this.prevSphereR;
+                    
+                    if (Math.abs(radiusDelta) > 0.006 && audioSystem.isPlaying) {
+                        const movementIntensity = Math.min(1.0, Math.abs(radiusDelta) * 22);
+                        const direction = radiusDelta > 0 ? 1 : -1;
+                        
+                        audioSystem.playHemisphericMovementSound(movementIntensity, direction, -1);
+                        setTimeout(() => {
+                            if (audioSystem.isPlaying) {
+                                audioSystem.playHemisphericMovementSound(movementIntensity * 0.93, direction, 1);
+                            }
+                        }, 11);
+                        
+                        if (direction > 0 && movementIntensity > 0.38) {
+                            audioSystem.playExpansionBurst(movementIntensity);
+                        }
+                    }
+                    this.prevSphereR = sphereR;
+                    
+                    const glowPhase = (effectivePhase + 1.0) * 0.5;
+                    coreOpacity = 0.042 + 0.21 * glowPhase * coherence;
+                    haloOpacity = 0.009 + 0.021 * glowPhase * coherence;
+                    haloExtra = 1.0 + 0.21 * glowPhase * coherence;
+                }
+                
+                this.baseUniforms.sphereRadius.value = sphereR;
+                
+                const t = this.deepBreathIntensity;
+                
+                if (this.sphere && this.sphereMaterial) {
+                    const extraScale = 1.0 + t * 0.38 + this.deepBreathExtra * 0.11;
+                    const s = sphereR / 2.0 * extraScale;
+                    this.sphere.scale.setScalar(s);
+                    
+                    const r = 0.667 + (0.46) * t;
+                    const g = 0.0   + (0.78) * t;
+                    const b = 1.0   + (0.10) * t;
+                    this.sphereMaterial.color.setRGB(r, g, b);
+                    
+                    this.sphereMaterial.opacity = coreOpacity * (1.0 + t * 0.24);
+                }
+                if (this.halo && this.haloMaterial) {
+                    const extraHalo = 1.0 + t * 0.31 + this.deepBreathExtra * 0.08;
+                    const hs = (sphereR / 2.0) * (1.4 + (haloExtra - 1.0) * 0.5) * extraHalo;
+                    this.halo.scale.setScalar(hs);
+                    
+                    const r = 0.667 + (0.46) * t;
+                    const g = 0.0   + (0.78) * t;
+                    const b = 1.0   + (0.10) * t;
+                    this.haloMaterial.color.setRGB(r, g, b);
+                    
+                    this.haloMaterial.opacity = haloOpacity * (1.0 + t * 0.27);
+                }
+                
+                if (this.particles) {
+                    this.particles.rotation.y = Math.sin(time * 0.07) * 0.22;
+                    this.particles.rotation.x = Math.cos(time * 0.095) * 0.062;
+                }
+                const camBob = Math.sin(time * 0.49) * 0.0075 * coherence;
+                this.camera.position.y = 0.52 + camBob;
+                
+                this.simulateFusion(dt, coherence, breathPhase, isHolding);
+                
+                if (this.releasedParticles && this.releasedParticles.visible) {
+                    const pos = this.releasedParticles.geometry.attributes.position.array;
+                    for (let i = 0; i < pos.length; i += 3) {
+                        const len = Math.sqrt(pos[i]*pos[i] + pos[i+1]*pos[i+1] + pos[i+2]*pos[i+2]);
+                        if (len > 0.18) {
+                            const f = isHolding ? 0.018 : 0.012;
+                            pos[i]   *= (1 - f);
+                            pos[i+1] *= (1 - f);
+                            pos[i+2] *= (1 - f);
+                        }
+                    }
+                    this.releasedParticles.geometry.attributes.position.needsUpdate = true;
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+        };
+
+        const brainStates = {
+            delta: { max: 3.9, name: "DELTA", desc: "Deep dreamless sleep, profound healing and regeneration.", color: "#6666ff", breathNote: "~3.4 breaths/min (17.5s cycle)" },
+            theta: { max: 7.9, name: "THETA", desc: "Deep meditation, REM sleep, creativity, insight, subconscious connection.", color: "#33ff99", breathNote: "~5.1 breaths/min (11.8s cycle) • Focus 10" },
+            alpha: { max: 13.9, name: "ALPHA", desc: "Relaxed focus, light trance, flow state, bridging conscious & subconscious.", color: "#ffdd66", breathNote: "~7.3 breaths/min (8.2s cycle)" },
+            beta: { max: 29.9, name: "BETA", desc: "Active waking consciousness, alertness, logical thinking, problem solving.", color: "#ff9944", breathNote: "~11.1 breaths/min (5.4s cycle)" },
+            gamma: { max: 999, name: "GAMMA", desc: "High-level information processing, cognitive enhancement, peak awareness.", color: "#ff66dd", breathNote: "~16.7 breaths/min (3.6s cycle)" }
+        };
+
+        const presetExplanations = {
+            delta: {
+                title: "Delta State • Deep Healing",
+                explanation: `
+                    <p><strong>Hemi-Sync</strong> uses binaural beats to help your brain naturally shift into specific brainwave patterns. Delta waves (0.5–4 Hz) are the slowest and are associated with the deepest stages of sleep and profound physical healing.</p>
+                    <p>This preset gently guides you into a Delta-dominant state, which many people use for deep rest, recovery, and accessing the subconscious mind.</p>
+                    <h4>The Particle Field</h4>
+                    <p>The moving particles represent the gentle, coherent activity of your brain and nervous system. As you relax, the particles move in harmony — a soothing visual metaphor for inner peace and integration.</p>
+                    <h4>The Breathing Orb</h4>
+                    <p>The central glowing sphere expands and contracts in time with a very slow, deep breathing rhythm. Use it as a soft visual guide: breathe in as it grows, breathe out as it gently shrinks. This helps regulate your nervous system and deepen your relaxation.</p>
+                `
+            },
+            theta: {
+                title: "Theta State • Focus 10",
+                explanation: `
+                    <p>Theta waves (4–8 Hz) are linked to deep meditation, creativity, intuition, and the borderland between waking and sleeping. Robert Monroe called the relaxed Theta state “Focus 10” — a place of expanded awareness while the body is deeply relaxed.</p>
+                    <p>This is one of the most popular states for meditation, inner exploration, and accessing creative insight.</p>
+                    <h4>The Particle Field</h4>
+                    <p>The particles create a calm, flowing visual field that mirrors the fluid, receptive quality of Theta consciousness. Watching them move can feel deeply soothing and help quiet mental chatter.</p>
+                    <h4>The Breathing Orb</h4>
+                    <p>The orb provides a gentle, rhythmic breathing cue matched to the Theta frequency. Synchronizing your breath with the orb helps you enter and maintain this deeply relaxed yet aware state more easily.</p>
+                `
+            },
+            alpha: {
+                title: "Alpha State • Relaxed Focus",
+                explanation: `
+                    <p>Alpha waves (8–12 Hz) are present during relaxed alertness — the state you feel when calmly focused, daydreaming, or meditating with eyes closed. It bridges the conscious and subconscious mind.</p>
+                    <p>Many people use Alpha for stress reduction, light meditation, and creative problem-solving.</p>
+                    <h4>The Particle Field</h4>
+                    <p>The particles move with a balanced, harmonious rhythm that feels calming yet mentally clear — perfect for maintaining relaxed attention without effort.</p>
+                    <h4>The Breathing Orb</h4>
+                    <p>The orb helps you maintain a steady, relaxed breathing pattern that supports Alpha brainwave production and keeps the mind gently anchored in the present moment.</p>
+                `
+            },
+            beta: {
+                title: "Beta State • Active Awareness",
+                explanation: `
+                    <p>Beta waves (12–30 Hz) are the dominant brainwave pattern during normal waking consciousness, focused thinking, and problem-solving. Higher Beta can be associated with concentration and mental energy.</p>
+                    <p>This preset can support alert focus and mental clarity when you want to remain engaged and productive.</p>
+                    <h4>The Particle Field</h4>
+                    <p>The particles move with more defined energy and structure, reflecting an active but balanced mind. It provides a visually engaging yet non-distracting backdrop for focused work or study.</p>
+                    <h4>The Breathing Orb</h4>
+                    <p>Even in an active state, steady breathing supports calm focus. The orb offers a subtle rhythm to help prevent mental fatigue and maintain centered attention.</p>
+                `
+            },
+            gamma: {
+                title: "Gamma State • Peak Awareness",
+                explanation: `
+                    <p>Gamma waves (30–100+ Hz) are the fastest brainwaves and are associated with heightened perception, insight, peak performance, and states of expanded consciousness. They often appear during moments of “aha!” insight or deep meditative absorption.</p>
+                    <p>Gamma is linked to advanced meditation states and heightened cognitive processing.</p>
+                    <h4>The Particle Field</h4>
+                    <p>The particles exhibit rapid, intricate movement patterns that can feel energizing and expansive — a visual representation of heightened neural activity and clarity.</p>
+                    <h4>The Breathing Orb</h4>
+                    <p>The orb provides a grounding breathing anchor so the mind can explore high-frequency states while the body remains relaxed and supported.</p>
+                `
+            }
+        };
+
+        function updateUI() {
+            const baseFreq = parseFloat(document.getElementById('base-slider').value);
+            const beatFreq = parseFloat(document.getElementById('beat-slider').value);
+            
+            document.getElementById('base-val').textContent = baseFreq.toFixed(1) + " Hz";
+            document.getElementById('beat-val').textContent = beatFreq.toFixed(1) + " Hz";
+            
+            const leftFreq = baseFreq - (beatFreq / 2);
+            const rightFreq = baseFreq + (beatFreq / 2);
+            
+            document.getElementById('left-hz').textContent = leftFreq.toFixed(2) + " Hz";
+            document.getElementById('right-hz').textContent = rightFreq.toFixed(2) + " Hz";
+
+            let currentStateKey = 'theta';
+            for (let key in brainStates) {
+                if (beatFreq <= brainStates[key].max) {
+                    currentStateKey = key;
+                    break;
+                }
+            }
+            const state = brainStates[currentStateKey];
+            
+            const stateNameEl = document.getElementById('state-name');
+            const statePanelEl = document.getElementById('state-panel');
+            const stateDescEl = document.getElementById('state-desc');
+            
+            stateNameEl.textContent = state.name;
+            stateDescEl.innerHTML = `${state.desc}<br><span style="opacity:0.7; font-size:0.8rem;">${state.breathNote}</span>`;
+            
+            stateNameEl.style.textShadow = `0 0 18px ${state.color}`;
+            stateNameEl.style.color = "#fff";
+            document.querySelector('.state-title').style.color = state.color;
+            statePanelEl.style.backgroundColor = `${state.color}0b`;
+            statePanelEl.style.borderColor = `${state.color}2e`;
+            
+            audioSystem.updateFrequencies(baseFreq, beatFreq);
+            if (visualSystem.baseUniforms) visualSystem.baseUniforms.beatFreq.value = beatFreq;
+        }
+
+        function setupPresets() {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    playClickSound();
+                    
+                    const base = parseFloat(btn.dataset.base);
+                    const beat = parseFloat(btn.dataset.beat);
+                    const stateKey = btn.dataset.state;
+                    
+                    showPresetModal(stateKey, base, beat);
+                });
+            });
+        }
+
+        function showPresetModal(stateKey, base, beat) {
+            const modal = document.getElementById('preset-modal');
+            const titleEl = document.getElementById('modal-preset-title');
+            const bodyEl = document.getElementById('modal-body-content');
+            const startBtn = document.getElementById('modal-start-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+            const closeBtn = document.getElementById('modal-close-btn');
+
+            const data = presetExplanations[stateKey];
+            if (!data) return;
+
+            titleEl.textContent = data.title;
+            bodyEl.innerHTML = data.explanation;
+
+            const newStartBtn = startBtn.cloneNode(true);
+            startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+
+            newStartBtn.onclick = () => {
+                document.getElementById('base-slider').value = base;
+                document.getElementById('beat-slider').value = beat;
+                
+                if (visualSystem.particles) {
+                    visualSystem.resetParticleSizes();
+                }
+                
+                updateUI();
+                modal.classList.remove('active');
+                
+                if (!audioSystem.isPlaying) {
+                    setTimeout(() => {
+                        const isPlaying = audioSystem.toggle();
+                        const playBtn = document.getElementById('play-btn');
+                        if (isPlaying) {
+                            playBtn.textContent = "Halt Synchronization";
+                            playBtn.classList.add('playing');
+                        }
+                    }, 280);
+                }
+            };
+
+            newCancelBtn.onclick = () => modal.classList.remove('active');
+            newCloseBtn.onclick = () => modal.classList.remove('active');
+
+            modal.classList.add('active');
+        }
+
+        function setupInfoModal() {
+            const moreInfoBtn = document.getElementById('more-info-btn');
+            const infoModal = document.getElementById('info-modal');
+            const closeBtn = document.getElementById('info-modal-close');
+            const closeBtn2 = document.getElementById('info-modal-close-btn2');
+
+            moreInfoBtn.addEventListener('click', () => {
+                playClickSound();
+                infoModal.classList.add('active');
+            });
+
+            closeBtn.onclick = () => infoModal.classList.remove('active');
+            closeBtn2.onclick = () => infoModal.classList.remove('active');
+
+            infoModal.addEventListener('click', (e) => {
+                if (e.target === infoModal) {
+                    infoModal.classList.remove('active');
+                }
+            });
+        }
+
+        const fsBtn = document.getElementById('fullscreen-btn');
+        fsBtn.addEventListener('click', () => {
+            playClickSound();
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(()=>{});
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fsBtn.textContent = "Exit Fullscreen";
+                fsBtn.style.color = "var(--accent-magenta)";
+                fsBtn.style.borderColor = "var(--accent-magenta)";
+            } else {
+                fsBtn.textContent = "Enter Fullscreen";
+                fsBtn.style.color = "var(--text-main)";
+                fsBtn.style.borderColor = "var(--border-color)";
+            }
+        });
+
+        const hideUiBtn = document.getElementById('hide-ui-btn');
+        const uiLayer = document.getElementById('ui-layer');
+        let isUiHidden = false;
+        hideUiBtn.addEventListener('click', () => {
+            playClickSound();
+            isUiHidden = !isUiHidden;
+            if (isUiHidden) {
+                uiLayer.classList.add('ui-hidden');
+                hideUiBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+            } else {
+                uiLayer.classList.remove('ui-hidden');
+                hideUiBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+            }
+        });
+
+        document.getElementById('base-slider').addEventListener('input', () => {
+            playClickSound();
+            updateUI();
+        });
+        document.getElementById('beat-slider').addEventListener('input', () => {
+            playClickSound();
+            updateUI();
+        });
+
+        document.getElementById('play-btn').addEventListener('click', (e) => {
+            playClickSound();
+            const isPlaying = audioSystem.toggle();
+            const btn = e.target;
+            if (isPlaying) {
+                btn.textContent = "Halt Synchronization";
+                btn.classList.add('playing');
+                updateUI();
+            } else {
+                btn.textContent = "Begin Synchronization";
+                btn.classList.remove('playing');
+            }
+        });
+
+        document.getElementById('state-panel').addEventListener('click', () => {
+            playClickSound();
+            if (visualSystem.baseUniforms) {
+                const orig = visualSystem.baseUniforms.coherence.value;
+                visualSystem.baseUniforms.coherence.value = Math.min(1.32, orig + 0.52);
+                setTimeout(() => { if (visualSystem.baseUniforms) visualSystem.baseUniforms.coherence.value = orig; }, 580);
+            }
+        });
+
+        function initializeApp() {
+            visualSystem.init();
+            updateUI();
+            setupPresets();
+            setupInfoModal();
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === "Escape") {
+                    document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+                }
+            });
+
+            setTimeout(() => {
+                visualSystem.onWindowResize();
+            }, 100);
+        }
+
+        initializeApp();
+    </script>
+</body>
+</html>
