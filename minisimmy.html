@@ -11492,9 +11492,9 @@ body.is-map-fullscreen #map-fullscreen-btn {
               evolveAudio.volume = musicVolume;
 
               const AMBIENT_TRACKS = [
-                  'music/FlowForge.mp3',
-                  'music/FlowForge_2.mp3',
-                  'music/FlowForge_3.mp3'
+                  'Music/FlowForge.mp3',
+                  'Music/FlowForge_2.mp3',
+                  'Music/FlowForge_3.mp3'
               ];
               let ambientAudio = null;
               let ambientTrackIndex = 0;
@@ -41173,8 +41173,13 @@ body.is-map-fullscreen #map-fullscreen-btn {
                   }
                   function _stopArenaMusic() {
                       try { if (_arenaAudio) _arenaAudio.pause(); } catch (e) {}
-                      try { for (const a of _mutedMusic) { if (a) { const pr = a.play(); if (pr && pr.catch) pr.catch(() => {}); } } } catch (e) {}
+                      try {
+                          for (const a of _mutedMusic) {
+                              if (a && a !== ambientAudio) { const pr = a.play(); if (pr && pr.catch) pr.catch(() => {}); }
+                          }
+                      } catch (e) {}
                       _mutedMusic = [];
+                      try { if (typeof resumeAmbientMusic === 'function') resumeAmbientMusic(); } catch (e) {}
                   }
 
                   function _start() {
@@ -45015,7 +45020,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       ambientAudio.addEventListener('ended', () => {
                           ambientTrackIndex = (ambientTrackIndex + 1) % AMBIENT_TRACKS.length;
                           ambientAudio.src = AMBIENT_TRACKS[ambientTrackIndex];
-                          if (!currentMusicMode && !musicEnabled) resumeAmbientMusic();
+                          if (!currentMusicMode && !musicEnabled && !window.echoArenaActive) resumeAmbientMusic();
                       });
                   }
               }
@@ -45031,7 +45036,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
               }
 
               function resumeAmbientMusic() {
-                  if (currentMusicMode || musicEnabled || audioMuted) return;
+                  if (currentMusicMode || musicEnabled || audioMuted || window.echoArenaActive) return;
                   ensureAmbientAudio();
                   applyAmbientVolume();
                   ambientAudio.play().catch(() => { });
@@ -45042,7 +45047,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                   if (ambientAutostartBound) return;
                   ambientAutostartBound = true;
                   const kick = () => {
-                      if (!currentMusicMode && !musicEnabled && !audioMuted) resumeAmbientMusic();
+                      if (!currentMusicMode && !musicEnabled && !audioMuted && !window.echoArenaActive) resumeAmbientMusic();
                   };
                   document.addEventListener('click', kick, { passive: true });
                   document.addEventListener('keydown', kick, { passive: true });
@@ -64303,6 +64308,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       _screen = 'menu';
                       if (typeof paused !== 'undefined') paused = true;
                       _render(ctx || {});
+                      try { if (typeof resumeAmbientMusic === 'function') resumeAmbientMusic(); } catch (e) {}
                   }
 
                   function _render(ctx) {
@@ -64431,6 +64437,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       hide();
                       if (typeof paused !== 'undefined') paused = false;
                       try { if (typeof LaunchSelector !== 'undefined') LaunchSelector._chosen = true; } catch (e) {}
+                      try { if (typeof resumeAmbientMusic === 'function') resumeAmbientMusic(); } catch (e) {}
                   }
                   function newSlotPrompt() {
                       let name = null;
@@ -64622,14 +64629,20 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       h.style.zIndex = '2147483001';
                       InputMode.refresh();
                       EAFocus.attach(h, null);
+                      try { if (typeof resumeAmbientMusic === 'function') resumeAmbientMusic(); } catch (e) {}
                   }
                   function _close() { EAFocus.detach(); const h = document.getElementById('ea-launch'); if (h) h.remove(); }
-                  function pickSim() { _chosen = true; _close(); if (typeof paused !== 'undefined') paused = false; }
+                  function pickSim() {
+                      _chosen = true; _close();
+                      if (typeof paused !== 'undefined') paused = false;
+                      try { if (typeof resumeAmbientMusic === 'function') resumeAmbientMusic(); } catch (e) {}
+                  }
                   function pickSimFullscreen() {
                       _chosen = true; _close();
                       if (typeof paused !== 'undefined') paused = false;
                       // Enter the game's custom fullscreen UI (distinct from the default/mobile view).
                       try { if (typeof toggleMapFullscreen === 'function') toggleMapFullscreen(true); } catch (e) {}
+                      try { if (typeof resumeAmbientMusic === 'function') resumeAmbientMusic(); } catch (e) {}
                   }
                   function pickArena() { _chosen = true; _close(); EchoArenaShell.open(); }
                   return { show, pickSim, pickSimFullscreen, pickArena, get chosen() { return _chosen; }, set _chosen(v) { _chosen = v; } };
