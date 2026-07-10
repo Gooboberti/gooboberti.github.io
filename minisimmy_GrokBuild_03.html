@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="minisimmy-build" content="orbital-ship-v2-2026-06-26-local-037-weave-system" />
-    <title>MiniSimmy Orbital Ship v2 — Grok Build 02</title>
+    <title>MiniSimmy Orbital Ship v2 — Grok Build 03</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2334d399'/%3E%3Ccircle cx='50' cy='50' r='22' fill='%230a0a0f'/%3E%3C/svg%3E" />
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PRE-LOAD UTILITIES
@@ -40906,7 +40906,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                   // [ArenaPowerups3] Round N requires N*10 echoes popped (10, 20, 30, …), and the
                   // game keeps rolling into ever-harder rounds with no cap.
                   function _roundGoal() { return cycle * 10; }
-                  const SHARD_CAP = 26;         // max grey shards floating at once
+                  const SHARD_CAP = 42;         // max grey shards floating at once
                   // In-run stack depth has no cap — lifetime loadout level scales forever with pickups.
                   let _shipStats = { maxHP:100, thrust:380, maxSpeed:460, rot:3.4, dmgMul:1, bulletSpeed:1, bulletR:1 };
                   let _shipMaxHP = 100;
@@ -40958,6 +40958,81 @@ body.is-map-fullscreen #map-fullscreen-btn {
                   // Essence straight back onto that creature's egg (its vitalEssence).
                   let _session = null;   // { profiles:[{...,srcIndex}], eggGains:{srcIndex:amount} }
                   let am = 0, _echoTarget = 0, _respawnT = 0;   // am = antimatter rounds carried into the arena
+                  let _sfxSeed = 0;
+
+                  // How empty the field feels — drives faster refills when the player clears too much.
+                  function _fieldPressure() {
+                      const echoFill = echoes ? (echoes.length / Math.max(1, _echoTarget)) : 0;
+                      const swarmFill = swarm ? (swarm.length / SWARM_CAP) : 0;
+                      return Math.max(0, Math.min(1, 1 - Math.max(echoFill, swarmFill * 0.82)));
+                  }
+
+                  // Layered combat SFX — punchier, weapon-specific attack sounds.
+                  function _arenaSfx(kind, opts) {
+                      if (typeof playTone !== 'function' || typeof canPlaySound !== 'function' || !canPlaySound('bullet')) return;
+                      opts = opts || {};
+                      const v = opts.vol || 0.13;
+                      const n = (++_sfxSeed % 997);
+                      const cp = cyclePower || 0;
+                      switch (kind) {
+                          case 'bullet':
+                              playTone(920 + (n % 6) * 38 + cp * 90, 'square', 0.02, v * 0.95, (n % 3) * 5);
+                              setTimeout(() => playTone(1280 + cp * 70, 'triangle', 0.014, v * 0.58), 11);
+                              if (opts.rapid) setTimeout(() => playTone(1480 + cp * 50, 'sine', 0.01, v * 0.32), 24);
+                              break;
+                          case 'laser':
+                              playTone(1720 + (n % 5) * 110, 'sawtooth', 0.032, v * 0.9);
+                              setTimeout(() => playTone(880, 'sine', 0.045, v * 0.42), 7);
+                              setTimeout(() => playTone(2200, 'triangle', 0.018, v * 0.28), 18);
+                              break;
+                          case 'missile':
+                              playTone(260 + (n % 4) * 28, 'square', 0.05, v * 0.75);
+                              setTimeout(() => playTone(480 + (n % 3) * 40, 'triangle', 0.038, v * 0.52), 20);
+                              break;
+                          case 'missileHit':
+                              playTone(88, 'sawtooth', 0.16, v * 1.15);
+                              setTimeout(() => playTone(175, 'square', 0.11, v * 0.82), 32);
+                              setTimeout(() => playTone(440, 'triangle', 0.09, v * 0.55), 68);
+                              setTimeout(() => playTone(720, 'sine', 0.06, v * 0.35), 105);
+                              break;
+                          case 'am':
+                              playTone(120, 'sawtooth', 0.14, v * 1.05);
+                              setTimeout(() => playTone(760, 'square', 0.1, v * 0.85), 22);
+                              setTimeout(() => playTone(1280, 'sine', 0.07, v * 0.5), 48);
+                              setTimeout(() => playTone(1680, 'triangle', 0.05, v * 0.32), 78);
+                              break;
+                          case 'hit':
+                              playTone(400 + (n % 7) * 42, 'triangle', 0.028, v * 0.7);
+                              setTimeout(() => playTone(620 + (n % 4) * 30, 'sine', 0.02, v * 0.4), 14);
+                              break;
+                          case 'pierce':
+                              playTone(1100 + (n % 4) * 60, 'sawtooth', 0.022, v * 0.55);
+                              break;
+                          case 'kill':
+                              playTone(520 + Math.min(400, mult * 10), 'triangle', 0.07, v * 0.85);
+                              setTimeout(() => playTone(780 + Math.min(300, mult * 8), 'sine', 0.055, v * 0.6), 38);
+                              setTimeout(() => playTone(1040, 'triangle', 0.04, v * 0.38), 82);
+                              break;
+                          case 'gruntKill':
+                              playTone(360 + (n % 5) * 45, 'square', 0.04, v * 0.65);
+                              setTimeout(() => playTone(540, 'triangle', 0.03, v * 0.42), 28);
+                              break;
+                          case 'orbit':
+                              if (Math.random() > 0.55) return;
+                              playTone(640 + (n % 5) * 55, 'sine', 0.022, v * 0.38);
+                              break;
+                          case 'pulse':
+                              playTone(210, 'sine', 0.18, v * 1.0);
+                              setTimeout(() => playTone(90, 'sine', 0.16, v * 0.82), 52);
+                              setTimeout(() => playTone(60, 'sawtooth', 0.12, v * 0.55), 108);
+                              break;
+                          case 'wave':
+                              playTone(opts.base || 220, 'sawtooth', 0.16, v * 0.95);
+                              setTimeout(() => playTone((opts.base || 220) * 1.5, 'triangle', 0.12, v * 0.7), 85);
+                              setTimeout(() => playTone((opts.base || 220) * 2.1, 'sine', 0.09, v * 0.48), 155);
+                              break;
+                      }
+                  }
 
                   // Build a compact module layout for an echo profile. Preserves the real
                   // creature's modules (type/tier/color/offset) so the echo renders as itself.
@@ -41030,7 +41105,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                   // in the sim — they're just noise the Arena dreamed up to fight.
                   const _SYN_PREFIX = ['Null','Void','Ash','Ember','Pale','Grave','Hex','Dross','Wane','Rift','Murk','Cinder','Hollow','Bleak','Vex','Glim','Shroud','Mote','Quell','Umbra','Fray','Gloom','Sable','Wisp'];
                   const _SYN_SUFFIX = ['wisp','fang','ling','shade','maw','husk','geist','spawn','crawler','wraith','mite','shard','glyph','ghast','coil','lurk','spore','veil','drift','remnant','knell','thorn'];
-                  const ARENA_MIN_ROSTER = 6;   // pad the pool up to this many profiles
+                  const ARENA_MIN_ROSTER = 12;  // pad the pool up to this many profiles
                   function _syntheticName() {
                       const a = _SYN_PREFIX[(Math.random()*_SYN_PREFIX.length)|0];
                       const b = _SYN_SUFFIX[(Math.random()*_SYN_SUFFIX.length)|0];
@@ -41404,25 +41479,26 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       try { _shipStats = (typeof Loadout !== 'undefined') ? Loadout.shipStats() : _shipStats; } catch (e) {}
                       _shipMaxHP = _shipStats.maxHP || 100;
                       shipHP = _shipMaxHP; bullets = []; lattices = []; particles = []; echoes = []; shards = []; geoms = []; powerups = []; wells = []; floaters = []; swarm = []; webs = []; _deadEchoes = [];
-                      mult = 1; essencePool = 0; multPulse = 0; _kills = 0; _wellTimer = 22; _puTimer = 4; _waveTimer = 4; _webTimer = 0.6; shake = 0; hitFlash = 0; bombFlash = 0; _lowHpWarn = 0; _timeFlash = 0; _roundMissed = 0;
-                      _echoKills = 0; _shardTimer = 3;   // [ArenaPowerups2] reset round goal + shard respawn
+                      mult = 1; essencePool = 0; multPulse = 0; _kills = 0; _wellTimer = 22; _puTimer = 2.2; _waveTimer = 2.5; _webTimer = 0.35; shake = 0; hitFlash = 0; bombFlash = 0; _lowHpWarn = 0; _timeFlash = 0; _roundMissed = 0;
+                      _echoKills = 0; _shardTimer = 1.2;   // [ArenaPowerups2] reset round goal + shard respawn
                       _padPrev = {}; _padFiring = false; _padAimActive = false; _padMoveX = 0; _padMoveY = 0;
                       cyclePower = 0; _flockSeq = 0; _menu = { buttons: [], index: 0, kind: null };
                       if (cycle === 1) bombs = 3;
                       phase = 'play'; cycleTime = Math.min(ROUND_TIME_CAP, ROUND_LEN + (cycle - 1) * 3); _flash('ROUND ' + cycle, 2.2);
                       _buildGrid();
                       const profiles = (_session && _session.profiles && _session.profiles.length) ? _session.profiles : [{srcIndex:null,name:'Echo',core:'sensor',elite:false,baseEssence:0,modules:_profileModules({core:'sensor'})}];
-                      const count = Math.min(12, Math.max(3, profiles.length));
-                      // [ArenaPowerups3] Field gets busier each round: more echoes present, refilling faster.
-                      _echoTarget = Math.min(24, count + (cycle - 1) * 2);
-                      const startEchoes = Math.min(_echoTarget, count + Math.floor((cycle - 1) * 1.5));
+                      const count = Math.min(20, Math.max(6, profiles.length));
+                      // Dense field — scales up each round with no slowdown when the player clears fast.
+                      _echoTarget = Math.min(52, count + (cycle - 1) * 5);
+                      const startEchoes = Math.min(_echoTarget, count + Math.floor((cycle - 1) * 3));
                       for (let k = 0; k < startEchoes; k++) echoes.push(_mkEcho(profiles[k % profiles.length]));
-                      _respawnT = 3.5;
-                      const fodder = 5 + cycle * 2;
+                      _respawnT = 1.4;
+                      const fodder = 10 + cycle * 4;
                       for (let k = 0; k < fodder; k++) shards.push(_mkShard());
-                      // Kick things off: a couple of chaser flocks + a powerup to grab.
-                      _spawnWave(); if (cycle >= 2) _spawnWave();
-                      _mkPowerup();
+                      // Kick things off hot: multiple chaser flocks + powerups.
+                      _spawnWave(); _spawnWave();
+                      if (cycle >= 2) _spawnWave();
+                      _mkPowerup(); _mkPowerup();
                   }
                   function _mkEcho(p) {
                       const core = p.core || 'sensor';
@@ -41478,7 +41554,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                           accel: GRUNT.accel * (0.75 + c.spd*0.35) * spdScl, maxspd: GRUNT.maxspd * (0.8 + c.spd*0.3) * spdScl,
                           grunt: true, gid: _t }, _behFields(core));
                   }
-                  const SWARM_CAP = 74;   // hard ceiling on chasers (perf) — shatter respects it
+                  const SWARM_CAP = 118;  // hard ceiling on chasers — raised for denser action
                   // A shattered module-creature: typed by its module, scatters then hunts you.
                   // Decays over time so the swarm population stays bounded.
                   function _mkMod(type, x, y, tier) {
@@ -41495,19 +41571,21 @@ body.is-map-fullscreen #map-fullscreen-btn {
                   function _shatterEcho(e) {
                       const room = SWARM_CAP - swarm.length; if (room <= 0) return;
                       const src = (e.mods || []).filter(m => !m.isCore);
-                      const cap = Math.min(room, e.elite ? 8 : 5, Math.max(3, src.length));
+                      const cap = Math.min(room, e.elite ? 12 : 8, Math.max(4, src.length));
                       for (let i = 0; i < cap; i++) {
                           const m = src.length ? src[i % src.length] : null;
                           const type = m ? (m.type || e.core) : e.core;
                           swarm.push(_mkMod(type, e.x + (Math.random()-0.5)*20, e.y + (Math.random()-0.5)*20, m ? (m.tier||1) : 1));
                       }
-                      if (typeof playTone === 'function') { playTone(300,'square',0.05,0.09); setTimeout(()=>playTone(220,'square',0.05,0.07), 45); }
+                      _arenaSfx('hit', { vol: 0.09 });
+                      setTimeout(() => _arenaSfx('gruntKill', { vol: 0.05 }), 40);
                   }
                   // Spawn one homogeneous flock ("all harvesters", "all sensors", ...).
                   function _spawnWave() {
-                      if (swarm.length >= SWARM_CAP - 8) return;
+                      if (swarm.length >= SWARM_CAP - 3) return;
                       const core = CORE_KEYS[(Math.random()*CORE_KEYS.length)|0];
-                      const size = 4 + ((Math.random()* (3 + cycle))|0);
+                      const pressure = _fieldPressure();
+                      const size = 7 + ((Math.random() * (6 + cycle * 1.4 + pressure * 8))|0);
                       const fid = ++_flockSeq;
                       // spawn cluster off a random edge so they stream in as a group
                       const edge = (Math.random()*4)|0;
@@ -41518,11 +41596,11 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       else { cx = -30; cy = Math.random()*H; }
                       for (let i = 0; i < size; i++) swarm.push(_mkGrunt(core, cx + (Math.random()-0.5)*70, cy + (Math.random()-0.5)*70, fid));
                       // [ArenaPowerups2] A new flock scatters a burst of grey shards (each a power-up).
-                      const burst = 3 + ((Math.random()*3)|0);
+                      const burst = 5 + ((Math.random()*5)|0);
                       for (let i = 0; i < burst && shards.length < SHARD_CAP; i++) { const s = _mkShard(); _burst(s.x, s.y, '#64748b', 3); shards.push(s); }
                       _flash(core.toUpperCase() + ' FLOCK', 1.1);
-                      if (typeof playTone === 'function') { const base = { harvester:196, sensor:262, mover:220, resistant:175, explorer:294, communicator:247 }[core] || 220;
-                          playTone(base, 'sawtooth', 0.14, 0.10); setTimeout(()=>playTone(base*1.5,'sawtooth',0.12,0.08), 90); }
+                      const waveBase = { harvester:196, sensor:262, mover:220, resistant:175, explorer:294, communicator:247 }[core] || 220;
+                      _arenaSfx('wave', { base: waveBase, vol: 0.14 });
                   }
                   function _updateGrunts(dt) {
                       const px = ship.x, py = ship.y;
@@ -41625,7 +41703,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       const fid = g.flockId, fx = g.x, fy = g.y, fcore = g.core;
                       if (g.web && webs.length) webs = webs.filter(w => w.a !== g && w.b !== g);
                       swarm.splice(idx, 1);
-                      if (typeof playTone === 'function') playTone(360 + Math.min(600, mult*22), 'triangle', 0.05, 0.07);
+                      _arenaSfx('gruntKill', { vol: 0.08 });
                       // Whole flock cleared → guaranteed power-up reward at the last kill.
                       if (fid && !swarm.some(o => o.flockId === fid)) _flockRewardPowerup(fx, fy, fcore);
                   }
@@ -41840,7 +41918,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       if (ship.clones) for (const cl of ship.clones) { if (!cl.dying && cl.t > 0.5)
                           bullets.push({ x: cl.x + Math.cos(a)*14, y: cl.y + Math.sin(a)*14, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd, life: 1.3, dmg: amDmg*0.7, am: true, pierce: 4, hit: [], r: 3*_shipStats.bulletR }); }
                       _kickShake(4); _burst(ship.x + Math.cos(a)*18, ship.y + Math.sin(a)*18, '#e879f9', 8);
-                      if (typeof playTone === 'function') { playTone(180,'sawtooth',0.1,0.18); setTimeout(()=>playTone(760,'square',0.08,0.14),40); }
+                      _arenaSfx('am', { vol: 0.15 });
                   }
 
                   // [ArenaPowerups2] Spread barrels grow with the spread powerup's level:
@@ -41879,7 +41957,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       const spd = 1500 * _shipStats.bulletSpeed;
                       bullets.push({ x: ox + Math.cos(ang)*18, y: oy + Math.sin(ang)*18, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
                           life: 0.55, dmg: dmg * 2.2 * pot, laser: true, pierce, hit: [], r: 3 * _shipStats.bulletR * width, ang });
-                      if (typeof playTone === 'function') playTone(1500, 'sawtooth', 0.02, 0.04);
+                      _arenaSfx('laser', { vol: 0.1 });
                   }
                   // Homing Missiles — seekers that chase the nearest echo and burst on impact.
                   function _fireMissiles(ox, oy, ang, dmg) {
@@ -41892,13 +41970,13 @@ body.is-map-fullscreen #map-fullscreen-btn {
                           const off = (i - (n - 1) / 2) * 0.5, a = ang + off;
                           bullets.push({ x: ox, y: oy, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd, life: 3.2, dmg: dmg*1.6, missile: true, turn, splash, r: 4*_shipStats.bulletR });
                       }
-                      if (typeof playTone === 'function') playTone(300, 'square', 0.04, 0.06);
+                      _arenaSfx('missile', { vol: 0.1 });
                   }
                   function _missileSplash(x, y, dmg, splashMul) {
                       const R = 62 * (splashMul || 1); _burst(x, y, '#fb923c', 20); _kickShake(3); _gridKick(x, y, 160, 140);
                       for (const e of echoes.slice()) { if (Math.hypot(x-e.x, y-e.y) < R) { e.hp -= dmg*0.7; e.charge = (e.charge||0) + dmg*0.7*CHARGE_MULT; e.hitFlash = ECHO_HIT_FLASH; if (e.hp <= 0) _killEcho(e); } }
                       for (const g of swarm.slice()) { if (Math.hypot(x-g.x, y-g.y) < R) { g.hp -= dmg*0.7; if (g.hp <= 0) _killGrunt(g); } }
-                      if (typeof playTone === 'function') playTone(120, 'square', 0.06, 0.1);
+                      _arenaSfx('missileHit', { vol: 0.12 });
                   }
 
                   // [ArenaPowerups] Twin escorts (fly-in/fly-out flankers that mirror your fire)
@@ -41944,14 +42022,14 @@ body.is-map-fullscreen #map-fullscreen-btn {
                                   if (Math.hypot(ox-e.x, oy-e.y) < orbitReach + e.r*0.4) {
                                       e.hp -= ORBIT_DPS*dt; e.charge = (e.charge||0) + ORBIT_DPS*dt*CHARGE_MULT; e.hitFlash = ECHO_HIT_FLASH;
                                       e.vx += (e.x-ox)*0.06; e.vy += (e.y-oy)*0.06;
-                                      if (Math.random() < 0.25) _burst(ox, oy, '#f9a8d4', 1);
+                                      if (Math.random() < 0.25) { _burst(ox, oy, '#f9a8d4', 1); _arenaSfx('orbit', { vol: 0.06 }); }
                                       if (e.hp <= 0) _killEcho(e);
                                   }
                               }
                               for (const g of swarm.slice()) {
                                   if (Math.hypot(ox-g.x, oy-g.y) < orbitReach + g.r*0.4) {
                                       g.hp -= ORBIT_DPS*dt; g.vx += (g.x-ox)*0.1; g.vy += (g.y-oy)*0.1;
-                                      if (Math.random() < 0.25) _burst(ox, oy, '#f9a8d4', 1);
+                                      if (Math.random() < 0.25) { _burst(ox, oy, '#f9a8d4', 1); _arenaSfx('orbit', { vol: 0.06 }); }
                                       if (g.hp <= 0) _killGrunt(g);
                                   }
                               }
@@ -42031,7 +42109,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                               if (ship.clones) for (const cl of ship.clones) { if (!cl.dying && cl.t > 0.5) _fireVolley(cl.x, cl.y, ship.angle + off, spreadLvl, bDmg * twinDmgMul); }
                           }
                           ship.fireCd = baseCd;
-                          if (typeof playTone === 'function') playTone((rapidLvl>0?1040:880) + cyclePower*120, 'square', 0.02, 0.05);
+                          _arenaSfx('bullet', { vol: rapidLvl > 0 ? 0.11 : 0.09, rapid: rapidLvl > 0 });
                       }
                       // ── Laser Lance: piercing beams while holding fire (ship + twins) ──
                       ship.laserCd = (ship.laserCd || 0) - dt;
@@ -42068,19 +42146,38 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       _padDash = false;
 
                       // ── Echoes recur: killed echoes fade back in so you can keep farming ──
-                      _respawnT -= dt;
+                      const pressure = _fieldPressure();
+                      _respawnT -= dt * (1 + pressure * 2.4);
                       if (_respawnT <= 0 && echoes.length < _echoTarget && _session && _session.profiles.length) {
-                          const p = _session.profiles[(Math.random()*_session.profiles.length)|0];
-                          const ne = _mkEcho(p); ne.inv = 0; echoes.push(ne);
-                          _burst(ne.x, ne.y, ne.col, 14);
-                          _respawnT = Math.max(1.1, 3.2 - cycle*0.16) + Math.random()*1.5;   // [ArenaPowerups3] faster refill later
+                          const deficit = _echoTarget - echoes.length;
+                          const batch = Math.min(deficit, 1 + Math.floor(pressure * 4));
+                          for (let b = 0; b < batch; b++) {
+                              const p = _session.profiles[(Math.random()*_session.profiles.length)|0];
+                              const ne = _mkEcho(p); ne.inv = 0; echoes.push(ne);
+                              _burst(ne.x, ne.y, ne.col, 12);
+                          }
+                          _respawnT = Math.max(0.25, 1.2 - cycle*0.05 - pressure*0.35) + Math.random()*0.75;
                       }
 
-                      // ── Timers: powerups (more frequent) + wells + chaser waves ──
-                      _puTimer -= dt; if (_puTimer <= 0 && powerups.length < 5) { _mkPowerup(); _puTimer = 6 + Math.random()*5; }
-                      _shardTimer -= dt; if (_shardTimer <= 0) { if (shards.length < SHARD_CAP) { const s = _mkShard(); _burst(s.x, s.y, '#64748b', 3); shards.push(s); } _shardTimer = 2.6 + Math.random()*2.6; }   // [ArenaPowerups2] shards keep flowing
+                      // ── Timers: powerups + shards + wells + chaser waves (pressure-accelerated) ──
+                      _puTimer -= dt * (1 + pressure * 0.6);
+                      if (_puTimer <= 0 && powerups.length < 9) { _mkPowerup(); _puTimer = 3.5 + Math.random()*3.5; }
+                      _shardTimer -= dt * (1 + pressure * 0.8);
+                      if (_shardTimer <= 0) {
+                          const shardBatch = shards.length < SHARD_CAP * 0.45 ? 2 : 1;
+                          for (let si = 0; si < shardBatch && shards.length < SHARD_CAP; si++) {
+                              const s = _mkShard(); _burst(s.x, s.y, '#64748b', 3); shards.push(s);
+                          }
+                          _shardTimer = 1.1 + Math.random()*1.4;
+                      }
                       _wellTimer -= dt; if (_wellTimer <= 0 && wells.length === 0 && cycle >= 2) { _mkWell(); _wellTimer = 30 + Math.random()*15; }
-                      _waveTimer -= dt; if (_waveTimer <= 0) { _spawnWave(); _waveTimer = Math.max(4.5, 9 - cycle*0.5) + Math.random()*3; }
+                      _waveTimer -= dt * (1 + pressure * 1.8);
+                      if (_waveTimer <= 0) {
+                          _spawnWave();
+                          if (pressure > 0.35 || Math.random() < 0.42) _spawnWave();
+                          if (pressure > 0.65 && swarm.length < SWARM_CAP - 12) _spawnWave();
+                          _waveTimer = Math.max(1.8, 5.5 - cycle*0.28 - pressure*1.6) + Math.random()*1.8;
+                      }
 
                       // ── Low-hull warning ──
                       if (shipHP > 0 && shipHP < 30) { _lowHpWarn -= dt; if (_lowHpWarn <= 0) { _lowHpWarn = 0.9; if (typeof playTone === 'function') playTone(160,'square',0.08,0.08); } }
@@ -42288,7 +42385,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       if (e.elite && Math.random() < 0.5) powerups.push({ x: e.x, y: e.y, type: 'am', life: 16, spin: 0, born: 0, reward: true });
                       for (const L of lattices) if (L.a===e || L.b===e) L.dead = true;
                       _deadEchoes.push(e); echoes.splice(idx, 1);
-                      if (typeof playTone==='function') { playTone(180,'sawtooth',0.1,0.16); setTimeout(()=>playTone(90,'sine',0.12,0.12),50); }
+                      _arenaSfx('kill', { vol: 0.14 });
                       // [ArenaPowerups2] Clear the round once this echo is fully banked.
                       if (_echoKills >= _roundGoal() && phase === 'play') _clearRound();
                   }
@@ -42315,7 +42412,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                       for (const g of swarm.slice()) { const d = Math.hypot(ship.x-g.x, ship.y-g.y); if (d < R) { const k=(1-d/R); g.vx += (g.x-ship.x)/(d||1)*1050*k; g.vy += (g.y-ship.y)/(d||1)*1050*k; g.hp -= 2; g.stunT = Math.max(g.stunT||0, PULSE_STUN*k + 0.3); _burst(g.x,g.y,g.col,3); if (g.hp<=0) _killGrunt(g); } }
                       particles.push({ x: ship.x, y: ship.y, vx:0, vy:0, life: 0.55, c:'#67e8f9', ring: true, r0: 10, r1: R });
                       particles.push({ x: ship.x, y: ship.y, vx:0, vy:0, life: 0.4, c:'#a5f3fc', ring: true, r0: 10, r1: R*0.6 });
-                      if (typeof playTone === 'function') { playTone(210,'sine',0.16,0.22); setTimeout(()=>playTone(90,'sine',0.16,0.18),55); setTimeout(()=>playTone(60,'sawtooth',0.12,0.12),110); }
+                      _arenaSfx('pulse', { vol: 0.18 });
                   }
                   function _hasLattice(a, b) { for (const L of lattices) if ((L.a===a&&L.b===b)||(L.a===b&&L.b===a)) return true; return false; }
 
@@ -42400,6 +42497,7 @@ body.is-map-fullscreen #map-fullscreen-btn {
                               if (Math.hypot(b.x-e.x,b.y-e.y) < e.r+3) {
                                   e.hp -= bd; e.charge = (e.charge||0) + bd * CHARGE_MULT; _burst(b.x,b.y, b.laser?'#5eead4':(pierce?'#e879f9':e.col), pierce?7:4);
                                   e.hitFlash = ECHO_HIT_FLASH;   // [ArenaCombat] visible "taking damage" flash
+                                  if (!b.missile && Math.random() < 0.38) _arenaSfx(b.laser ? 'pierce' : (b.am ? 'pierce' : 'hit'), { vol: b.am ? 0.1 : 0.075 });
                                   for (const L of lattices) if (!L.done && (L.a===e||L.b===e)) L.dead = true;
                                   _chargeEchoLattices(e);        // [ArenaCombat] shooting arms this echo's finished links (green)
                                   if (e.hp <= 0) _killEcho(e);
